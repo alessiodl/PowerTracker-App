@@ -1570,19 +1570,38 @@
               // 1. Ripristina Esercizi
               await db.exercises.clear();
               if (Array.isArray(data.exercises) && data.exercises.length > 0) {
-                await db.exercises.bulkAdd(data.exercises);
+                const cleanExercises = data.exercises.map(e => {
+                  const copy = { ...e };
+                  if (copy.id === null || copy.id === undefined || isNaN(copy.id) || copy.id === "") {
+                    delete copy.id;
+                  }
+                  return copy;
+                });
+                await db.exercises.bulkAdd(cleanExercises);
               }
 
               // 2. Ripristina Schede (Templates)
               await db.templates.clear();
               if (Array.isArray(data.templates) && data.templates.length > 0) {
-                await db.templates.bulkAdd(data.templates);
+                const cleanTemplates = data.templates.filter(t => 
+                  t.program !== null && t.program !== undefined && !isNaN(t.program) &&
+                  t.week !== null && t.week !== undefined && !isNaN(t.week) &&
+                  t.session
+                );
+                await db.templates.bulkAdd(cleanTemplates);
               }
 
               // 3. Ripristina Workout Logs
               await db.workoutLogs.clear();
               if (Array.isArray(data.workoutLogs) && data.workoutLogs.length > 0) {
-                await db.workoutLogs.bulkAdd(data.workoutLogs);
+                const cleanLogs = data.workoutLogs.map(l => {
+                  const copy = { ...l };
+                  if (copy.id === null || copy.id === undefined || isNaN(copy.id) || copy.id === "") {
+                    delete copy.id;
+                  }
+                  return copy;
+                });
+                await db.workoutLogs.bulkAdd(cleanLogs);
               }
 
               // 4. Ripristina Impostazioni
