@@ -1102,9 +1102,13 @@
 
         onMounted(async () => {
           applyTheme();
-          await seedDefaultExercises();
+          const isInitialized = localStorage.getItem('pl_initialized') === 'true';
+          if (!isInitialized) {
+            await seedDefaultExercises();
+            await seedDefaultPlanIfEmpty();
+            localStorage.setItem('pl_initialized', 'true');
+          }
           await loadCatalog();
-          await seedDefaultPlanIfEmpty();
           await loadSelectedPlanAndWorkout();
           await loadLogs();
 
