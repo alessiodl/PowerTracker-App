@@ -628,6 +628,30 @@
           </div>
         </div>
 
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
+          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Sincronizzazione Completa (Cloud)</h2>
+          <p class="text-xs dark:text-slate-400 text-slate-500">Invia o scarica l'intero database (schede, catalogo, allenamenti e peso corporeo) per sincronizzare più dispositivi.</p>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              @click="uploadFullDatabase" 
+              :disabled="isSyncingCloud || !webhookUrl"
+              class="px-2.5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            >
+              <span v-if="isSyncingCloud">⏳ Sincronizzazione...</span>
+              <span v-else>📤 Invia al Cloud</span>
+            </button>
+            <button 
+              @click="downloadFullDatabase" 
+              :disabled="isSyncingCloud || !webhookUrl"
+              class="px-2.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            >
+              <span v-if="isSyncingCloud">⏳ Sincronizzazione...</span>
+              <span v-else>📥 Scarica dal Cloud</span>
+            </button>
+          </div>
+        </div>
+
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
           <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">API Key per funzionalità AI</h2>
           <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Inserisci la tua API Key di Google Gemini per abilitare l'import di schede da immagine o appunti.</p>
@@ -898,6 +922,7 @@
         const activeTab = ref('plan');
         const isDarkMode = ref(localStorage.getItem('pl_theme') === 'dark');
         const isImportingImage = ref(false);
+        const isSyncingCloud = ref(false);
 
         const selectedProgram = ref(1);
         const selectedWeek = ref(1);
@@ -925,8 +950,8 @@
         const geminiApiKey = ref(localStorage.getItem('pl_gemini_key') || '');
 
         // Livelli di Performance - Calcolatore BW
-        const userBodyWeight = ref('');
-        const activeBodyWeight = ref(null);
+        const userBodyWeight = ref(localStorage.getItem('pl_body_weight') || '');
+        const activeBodyWeight = ref(userBodyWeight.value ? parseFloat(userBodyWeight.value) : null);
         const levelRows = [
           { name: 'Panca', type: 'bw', l1: 1.2, l2: 1.5, l3: 1.8 },
           { name: 'Trazioni', type: 'reps', l1: 10, l2: 20, l3: 30 },
@@ -956,16 +981,19 @@
           const n = parseFloat(String(userBodyWeight.value).replace(',', '.'));
           if (!n || n <= 0) {
             activeBodyWeight.value = null;
+            localStorage.removeItem('pl_body_weight');
             showToast('Inserisci un peso corporeo valido.');
             return;
           }
           activeBodyWeight.value = n;
+          localStorage.setItem('pl_body_weight', String(n));
           showToast('Carichi calcolati in base al peso corporeo!');
         }
 
         function resetLevels() {
           userBodyWeight.value = '';
           activeBodyWeight.value = null;
+          localStorage.removeItem('pl_body_weight');
           showToast('Tabella ripristinata ai valori di default.');
         }
 
@@ -1472,6 +1500,130 @@
           showToast('JSON copiato negli appunti!');
         }
 
+        async function uploadFullDatabase() {
+          if (!webhookUrl.value) {
+            showToast('Configura prima l\'URL del Webhook!');
+            return;
+          }
+          isSyncingCloud.value = true;
+          showToast('Preparazione backup del database...');
+          try {
+            const allExercises = await db.exercises.toArray();
+            const allTemplates = await db.templates.toArray();
+            const allWorkoutLogs = await db.workoutLogs.toArray();
+
+            const payload = {
+              action: "upload",
+              exercises: allExercises,
+              templates: allTemplates,
+              workoutLogs: allWorkoutLogs,
+              userSettings: {
+                bodyWeight: userBodyWeight.value || ""
+              }
+            };
+
+            const res = await fetch(webhookUrl.value, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+              // Aggiorna lo stato di sync locale
+              for (const log of allWorkoutLogs) {
+                if (!log.synced) {
+                  await db.workoutLogs.update(log.id, { synced: true });
+                }
+              }
+              await loadLogs();
+              showToast('Database caricato sul Cloud con successo!');
+            } else {
+              throw new Error('Caricamento fallito.');
+            }
+          } catch (err) {
+            console.error('Errore backup database:', err);
+            showToast('Errore durante il caricamento del database.');
+          } finally {
+            isSyncingCloud.value = false;
+          }
+        }
+
+        async function performDownloadFullDatabase() {
+          isSyncingCloud.value = true;
+          showToast('Download in corso dal Cloud...');
+          try {
+            const payload = { action: "download" };
+            const res = await fetch(webhookUrl.value, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              throw new Error('Scaricamento fallito dal server.');
+            }
+
+            const result = await res.json();
+            if (result.status === 'success' && result.data) {
+              const data = result.data;
+
+              // 1. Ripristina Esercizi
+              await db.exercises.clear();
+              if (Array.isArray(data.exercises) && data.exercises.length > 0) {
+                await db.exercises.bulkAdd(data.exercises);
+              }
+
+              // 2. Ripristina Schede (Templates)
+              await db.templates.clear();
+              if (Array.isArray(data.templates) && data.templates.length > 0) {
+                await db.templates.bulkAdd(data.templates);
+              }
+
+              // 3. Ripristina Workout Logs
+              await db.workoutLogs.clear();
+              if (Array.isArray(data.workoutLogs) && data.workoutLogs.length > 0) {
+                await db.workoutLogs.bulkAdd(data.workoutLogs);
+              }
+
+              // 4. Ripristina Impostazioni
+              if (data.userSettings && data.userSettings.bodyWeight !== undefined) {
+                userBodyWeight.value = data.userSettings.bodyWeight;
+                if (data.userSettings.bodyWeight) {
+                  activeBodyWeight.value = parseFloat(data.userSettings.bodyWeight);
+                  localStorage.setItem('pl_body_weight', String(data.userSettings.bodyWeight));
+                } else {
+                  activeBodyWeight.value = null;
+                  localStorage.removeItem('pl_body_weight');
+                }
+              }
+
+              await loadCatalog();
+              await loadSelectedPlanAndWorkout();
+              await loadLogs();
+              showToast('Database ripristinato dal Cloud!');
+            } else {
+              throw new Error(result.message || 'Dati del server non validi.');
+            }
+          } catch (err) {
+            console.error('Errore ripristino database:', err);
+            showToast('Errore durante il download del database.');
+          } finally {
+            isSyncingCloud.value = false;
+          }
+        }
+
+        function downloadFullDatabase() {
+          if (!webhookUrl.value) {
+            showToast('Configura prima l\'URL del Webhook!');
+            return;
+          }
+          askConfirm(
+            'Ripristina dal Cloud',
+            'Attenzione: questa operazione sovrascriverà TUTTI i dati locali di questo dispositivo (schede, catalogo, allenamenti) con quelli presenti su Google Sheets. Vuoi procedere?',
+            async () => { await performDownloadFullDatabase(); }
+          );
+        }
+
         async function processImageFile(file) {
           if (!file) return;
 
@@ -1690,6 +1842,9 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           saveWebhookUrl,
           geminiApiKey,
           saveGeminiApiKey,
+          isSyncingCloud,
+          uploadFullDatabase,
+          downloadFullDatabase,
           userBodyWeight,
           levelTable,
           calculateLevels,
