@@ -219,7 +219,18 @@ function doPost(e) {
         for (var i = 0; i < aRows.length; i++) {
           var lid = String(aRows[i][0]);
           if (lid) {
-            var date = aRows[i][1] instanceof Date ? Utilities.formatDate(aRows[i][1], Session.getScriptTimeZone(), "yyyy-MM-dd") : String(aRows[i][1] || "");
+            var rawDate = aRows[i][1];
+            var date = "";
+            if (rawDate instanceof Date) {
+              date = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+            } else if (rawDate) {
+              var dObj = new Date(rawDate);
+              if (!isNaN(dObj.getTime())) {
+                date = Utilities.formatDate(dObj, Session.getScriptTimeZone(), "yyyy-MM-dd");
+              } else {
+                date = String(rawDate);
+              }
+            }
             var prog = Number(aRows[i][2]);
             var week = Number(aRows[i][3]);
             var sess = String(aRows[i][4]);
