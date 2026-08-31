@@ -310,20 +310,26 @@ function doPost(e) {
             var sets = ex.sets || [];
             for (var s = 0; s < sets.length; s++) {
               var set = sets[s];
-              logOutRows.push([
-                l.id, l.date, l.program, l.week, l.session, isRep,
-                ex.exerciseName || "", ex.category || "", ex.targetReference || "",
-                set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
-                set.rpe || "", set.rest || "", set.notes || "",
-                l.updatedAt, isDel
-              ]);
+              var hasData = (set.weight !== null && set.weight !== "") || 
+                            (set.reps !== null && set.reps !== "") || 
+                            (set.rpe && String(set.rpe).trim() !== "") || 
+                            (set.notes && String(set.notes).trim() !== "");
+              if (hasData) {
+                logOutRows.push([
+                  l.id, l.date, l.program, l.week, l.session, isRep,
+                  ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                  set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                  set.rpe || "", set.rest || "", set.notes || "",
+                  l.updatedAt, isDel
+                ]);
+              }
             }
           }
-        } else {
+        } else if (l.isDeleted) {
           logOutRows.push([
             l.id, l.date, l.program, l.week, l.session, isRep,
             "", "", "", "", "", "", "", "", "",
-            l.updatedAt, isDel
+            l.updatedAt, "Sì"
           ]);
         }
       }
