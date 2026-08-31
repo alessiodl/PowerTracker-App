@@ -513,9 +513,10 @@
           </button>
           <button 
             @click="saveWorkoutSession" 
-            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99]"
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-1.5"
           >
-            Salva Allenamento in Locale / Cloud
+            <span>✓</span>
+            <span>Concludi e Sincronizza</span>
           </button>
         </div>
 
@@ -1718,9 +1719,13 @@
           };
 
           await db.workoutLogs.put(logData);
-          showToast('Allenamento salvato in locale!');
+          showToast('✓ Allenamento concluso e salvato!');
           await loadLogs();
-          triggerDebouncedSync(500);
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          } else {
+            triggerDebouncedSync(500);
+          }
         }
 
         function addExerciseToPlanFromSelect(event) {
