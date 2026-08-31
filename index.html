@@ -195,15 +195,6 @@
             </button>
           </div>
 
-          <!-- Copy Previous Week Button -->
-          <button 
-            v-if="selectedWeek > 1" 
-            @click="copyFromPreviousWeek" 
-            class="w-full px-2.5 py-1.5 dark:bg-slate-800 bg-amber-50 dark:hover:bg-slate-700 hover:bg-amber-100 dark:text-amber-400 text-amber-700 rounded-[2px] text-xs font-mono font-bold border border-amber-500/40 flex items-center justify-center gap-1 transition-all shadow-sm"
-          >
-            📋 Copia W{{ selectedWeek - 1 }}
-          </button>
-
           <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed dark:bg-slate-950 bg-slate-100 p-2 rounded-[2px] border dark:border-slate-800 border-slate-200">
             💡 Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi caricare uno screenshot della tua scheda o incollarlo con Ctrl+V.
           </p>
@@ -1627,20 +1618,6 @@
           triggerDebouncedSync(1000);
         }
 
-        async function copyFromPreviousWeek() {
-          if (selectedWeek.value <= 1) return;
-          const prevId = `p${selectedProgram.value}_w${selectedWeek.value - 1}_s${selectedSession.value}`;
-          const prevPlan = await db.templates.get(prevId);
-
-          if (prevPlan && !prevPlan.isDeleted && prevPlan.exercises && prevPlan.exercises.length > 0) {
-            currentPlan.exercises = JSON.parse(JSON.stringify(prevPlan.exercises));
-            await savePlan();
-            showToast(`Copiati esercizi da Settimana ${selectedWeek.value - 1}!`);
-          } else {
-            showToast(`Nessuna scheda trovata in Settimana ${selectedWeek.value - 1}`);
-          }
-        }
-
         async function addNewExerciseToCatalog() {
           if (!newExercise.name.trim()) return;
           const now = new Date().toISOString();
@@ -2131,7 +2108,6 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           removeExerciseFromPlan,
           requestRemoveExerciseFromPlan,
           savePlan,
-          copyFromPreviousWeek,
           handleImageUpload,
           handleClipboardPaste,
           selectedLogForModal,
