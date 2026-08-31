@@ -190,19 +190,19 @@ function doPost(e) {
       var tplList = Object.keys(tplMap).map(function(k) { return tplMap[k]; });
       for (var i = 0; i < tplList.length; i++) {
         var t = tplList[i];
-        var isDel = t.isDeleted ? "Sì" : "No";
-        if (!t.isDeleted && t.exercises && t.exercises.length > 0) {
+        var isDel = (t.isDeleted || !t.exercises || t.exercises.length === 0) ? "Sì" : "No";
+        if (isDel === "No") {
           for (var j = 0; j < t.exercises.length; j++) {
             var ex = t.exercises[j];
             tplOutRows.push([
               t.id, t.program, t.week, t.session,
               ex.exerciseName || "", ex.category || "", ex.target || "", ex.rest || "", ex.notes || "",
-              t.updatedAt, isDel
+              t.updatedAt, "No"
             ]);
           }
         } else {
           tplOutRows.push([
-            t.id, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt, isDel
+            t.id, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt, "Sì"
           ]);
         }
       }
