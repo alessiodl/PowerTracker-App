@@ -950,8 +950,8 @@
       });
     }
 
-    const db = new Dexie('PowerliftingDB');
-    db.version(2).stores({
+    const db = new Dexie('PowerTrackDB_v2');
+    db.version(1).stores({
       exercises: 'id, name, category, updatedAt, isDeleted, _dirty',
       templates: 'id, program, week, session, updatedAt, isDeleted, _dirty',
       workoutLogs: 'id, date, program, week, session, updatedAt, isDeleted, _dirty'
@@ -1204,58 +1204,72 @@
           setTimeout(() => { toastMessage.value = ''; }, 2500);
         }
 
-        // Migrazione trasparente dei dati v1 -> v2 (UUID e timestamp)
+        // Migrazione trasparente dal vecchio DB 'PowerliftingDB' (v1) al nuovo 'PowerTrackDB_v2'
         async function migrateDataIfNeeded() {
           try {
-            const rawExercises = await db.exercises.toArray();
-            for (const ex of rawExercises) {
-              let changed = false;
-              const update = {};
-              if (!ex.id || typeof ex.id === 'number') {
-                update.id = generateUUID();
-                changed = true;
-                await db.exercises.delete(ex.id);
-              }
-              if (!ex.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
-              if (ex.isDeleted === undefined) { update.isDeleted = false; changed = true; }
-              if (ex._dirty === undefined) { update._dirty = true; changed = true; }
-              if (changed) {
-                await db.exercises.put({ ...ex, ...update });
-              }
-            }
+            const exists = await Dexie.exists('PowerliftingDB');
+            if (exists) {
+              const oldDb = new Dexie('PowerliftingDB');
+              oldDb.version(1).stores({
+                exercises: '++id, name, category',
+                templates: '[program+week+session], program, week, session',
+                workoutLogs: '++id, date, [program+week+session], synced'
+              });
+              await oldDb.open();
+              const oldExercises = await oldDb.exercises.toArray();
+              const oldTemplates = await oldDb.templates.toArray();
+              const oldLogs = await oldDb.workoutLogs.toArray();
 
-            const rawTemplates = await db.templates.toArray();
-            for (const t of rawTemplates) {
-              let changed = false;
-              const update = {};
-              const defaultId = `p${t.program}_w${t.week}_s${t.session}`;
-              if (!t.id) { update.id = defaultId; changed = true; }
-              if (!t.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
-              if (t.isDeleted === undefined) { update.isDeleted = false; changed = true; }
-              if (t._dirty === undefined) { update._dirty = true; changed = true; }
-              if (changed) {
-                await db.templates.put({ ...t, ...update });
+              const now = new Date().toISOString();
+              if (oldExercises && oldExercises.length > 0) {
+                for (const ex of oldExercises) {
+                  await db.exercises.put({
+                    id: generateUUID(),
+                    name: ex.name,
+                    category: ex.category || 'accessory',
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
+                  });
+                }
               }
-            }
-
-            const rawLogs = await db.workoutLogs.toArray();
-            for (const log of rawLogs) {
-              let changed = false;
-              const update = {};
-              if (!log.id || typeof log.id === 'number') {
-                update.id = generateUUID();
-                changed = true;
-                await db.workoutLogs.delete(log.id);
+              if (oldTemplates && oldTemplates.length > 0) {
+                for (const t of oldTemplates) {
+                  await db.templates.put({
+                    id: `p${t.program}_w${t.week}_s${t.session}`,
+                    program: t.program,
+                    week: t.week,
+                    session: t.session,
+                    exercises: t.exercises || [],
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
+                  });
+                }
               }
-              if (!log.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
-              if (log.isDeleted === undefined) { update.isDeleted = false; changed = true; }
-              if (log._dirty === undefined) { update._dirty = !log.synced; changed = true; }
-              if (changed) {
-                await db.workoutLogs.put({ ...log, ...update });
+              if (oldLogs && oldLogs.length > 0) {
+                for (const log of oldLogs) {
+                  await db.workoutLogs.put({
+                    id: generateUUID(),
+                    date: log.date,
+                    program: log.program,
+                    week: log.week,
+                    session: log.session,
+                    isRepeated: !!log.isRepeated,
+                    performedExercises: log.performedExercises || [],
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true,
+                    synced: false
+                  });
+                }
               }
+              oldDb.close();
+              await Dexie.delete('PowerliftingDB');
             }
           } catch (e) {
-            console.warn('Migrazione Dexie completata o non necessaria:', e);
+            console.warn('Migrazione da vecchio database completata o non necessaria:', e);
+            try { await Dexie.delete('PowerliftingDB'); } catch (err) {}
           }
         }
 
