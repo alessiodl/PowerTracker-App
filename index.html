@@ -322,22 +322,56 @@
               class="dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-[11px] p-1 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
             />
 
-            <!-- Flag Allenamento Ripetuto -->
-            <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
-              <input 
-                type="checkbox" 
-                v-model="currentWorkout.isRepeated" 
-                class="w-4 h-4 rounded-[2px] text-amber-500 focus:ring-amber-400 bg-slate-900 border-slate-700"
-              />
-              <span class="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
-                Ripetuto
-              </span>
-            </label>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="reloadWorkoutFromPlan" 
+                class="px-2 py-1 bg-sky-600/10 hover:bg-sky-600/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 rounded-[2px] text-[10px] font-mono font-bold uppercase shrink-0"
+                title="Ricarica gli esercizi definiti nella Scheda Target"
+              >
+                🔄 Ricarica Scheda
+              </button>
+
+              <!-- Flag Allenamento Ripetuto -->
+              <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
+                <input 
+                  type="checkbox" 
+                  v-model="currentWorkout.isRepeated" 
+                  class="w-4 h-4 rounded-[2px] text-amber-500 focus:ring-amber-400 bg-slate-900 border-slate-700"
+                />
+                <span class="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                  Ripetuto
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Banner when no exercises are in workout -->
+        <div v-if="currentWorkout.performedExercises.length === 0" class="dark:bg-[#1c202c] bg-white rounded-[2px] p-6 border dark:border-slate-700 border-slate-300 text-center space-y-3 shadow-sm">
+          <div class="text-3xl">📋</div>
+          <h3 class="font-bold text-sm dark:text-slate-200 text-slate-800">Nessun esercizio pianificato per Giorno {{ selectedSession }} (W{{ selectedWeek }})</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-500 max-w-sm mx-auto">
+            Configura la scheda del giorno nella tab <strong>Scheda Target</strong> oppure importa lo schema per iniziare l'allenamento.
+          </p>
+          <div class="flex items-center justify-center gap-2 pt-2">
+            <button 
+              @click="activeTab = 'plan'" 
+              class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px]"
+            >
+              📋 Vai alla Scheda Target
+            </button>
+            <button 
+              v-if="currentPlan.exercises && currentPlan.exercises.length > 0"
+              @click="reloadWorkoutFromPlan" 
+              class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px]"
+            >
+              🔄 Carica Scheda Target ({{ currentPlan.exercises.length }} es.)
+            </button>
           </div>
         </div>
 
         <!-- Performed Exercises List -->
-        <div class="space-y-4">
+        <div v-if="currentWorkout.performedExercises.length > 0" class="space-y-4">
           <div 
             v-for="(ex, exIdx) in currentWorkout.performedExercises" 
             :key="exIdx" 
@@ -1454,18 +1488,34 @@
           onWorkoutDataInput();
         }
 
+        function reloadWorkoutFromPlan() {
+          if (!currentPlan.exercises || currentPlan.exercises.length === 0) {
+            showToast('Nessun esercizio pianificato nella Scheda Target!');
+            return;
+          }
+          currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+            exerciseName: item.exerciseName,
+            category: item.category,
+            targetReference: item.target,
+            sets: [
+              { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
+            ]
+          }));
+          showToast(`✓ Caricati ${currentPlan.exercises.length} esercizi dalla Scheda Target!`);
+        }
+
         async function loadSelectedPlanAndWorkout(preserveDate = false) {
           isInternalLoading = true;
           try {
             const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
             const plan = await db.templates.get(tId);
 
-            if (plan && !plan.isDeleted) {
+            if (plan && !plan.isDeleted && Array.isArray(plan.exercises) && plan.exercises.length > 0) {
               currentPlan.id = plan.id;
               currentPlan.program = plan.program;
               currentPlan.week = plan.week;
               currentPlan.session = plan.session;
-              currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises || []));
+              currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises));
             } else {
               currentPlan.id = tId;
               currentPlan.program = selectedProgram.value;
@@ -1478,6 +1528,9 @@
             const todayStr = getTodayDateStr();
             const targetDate = preserveDate && currentWorkout.date ? currentWorkout.date : todayStr;
             currentWorkout.date = targetDate;
+            currentWorkout.program = selectedProgram.value;
+            currentWorkout.week = selectedWeek.value;
+            currentWorkout.session = selectedSession.value;
 
             // Cerca se esiste già un log registrato per QUESTA specifica data e seduta
             const allLogs = await db.workoutLogs.toArray();
@@ -1489,18 +1542,17 @@
               l.session === selectedSession.value
             );
 
-            if (existingLog) {
+            // Controlla se il log esistente contiene almeno 1 set con dati reali
+            const hasRealLogData = existingLog && (existingLog.performedExercises || []).some(ex => 
+              (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+            );
+
+            if (existingLog && hasRealLogData) {
               currentWorkout.id = existingLog.id;
-              currentWorkout.program = existingLog.program;
-              currentWorkout.week = existingLog.week;
-              currentWorkout.session = existingLog.session;
               currentWorkout.isRepeated = !!existingLog.isRepeated;
               currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
             } else {
               currentWorkout.id = generateUUID();
-              currentWorkout.program = selectedProgram.value;
-              currentWorkout.week = selectedWeek.value;
-              currentWorkout.session = selectedSession.value;
               currentWorkout.isRepeated = false;
               currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
                 exerciseName: item.exerciseName,
@@ -2339,6 +2391,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           onWorkoutDateChange,
           onWorkoutDataInput,
           onRepsInput,
+          reloadWorkoutFromPlan,
           editLogFromHistory,
           addSet,
           removeSet,
