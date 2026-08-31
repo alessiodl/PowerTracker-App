@@ -1785,8 +1785,9 @@
             _dirty: true
           });
 
+          currentWorkout.performedExercises = [];
+
           showToast('Scheda svuotata!');
-          await loadSelectedPlanAndWorkout();
           if (webhookUrl.value) {
             syncWithCloud({ silent: false });
           }
@@ -1815,9 +1816,65 @@
             _dirty: true
           });
 
-          showToast(`Scheda Giorno ${selectedSession.value} aggiornata!`);
-          await loadSelectedPlanAndWorkout();
-          triggerDebouncedSync(1000);
+          // Popola immediatamente i blocchi dell'allenamento con la nuova scheda target
+          const newPerformed = currentPlan.exercises.map(item => {
+            const existingEx = (currentWorkout.performedExercises || []).find(e => e.exerciseName === item.exerciseName);
+            if (existingEx && existingEx.sets && existingEx.sets.length > 0) {
+              return {
+                exerciseName: item.exerciseName,
+                category: item.category,
+                targetReference: item.target,
+                sets: existingEx.sets
+              };
+            }
+            return {
+              exerciseName: item.exerciseName,
+              category: item.category,
+              targetReference: item.target,
+              sets: [
+                { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
+              ]
+            };
+          });
+
+          currentWorkout.program = selectedProgram.value;
+          currentWorkout.week = selectedWeek.value;
+          currentWorkout.session = selectedSession.value;
+          currentWorkout.performedExercises = newPerformed;
+
+          // Se c'è un workout registrato per questa seduta, aggiornalo in locale
+          const allLogs = await db.workoutLogs.toArray();
+          const existingLog = allLogs.find(l => 
+            !l.isDeleted &&
+            l.program === selectedProgram.value && 
+            l.week === selectedWeek.value && 
+            l.session === selectedSession.value
+          );
+
+          const logId = existingLog ? existingLog.id : (currentWorkout.id || generateUUID());
+          currentWorkout.id = logId;
+
+          await db.workoutLogs.put({
+            id: logId,
+            date: currentWorkout.date || (existingLog ? existingLog.date : new Date().toISOString().split('T')[0]),
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            isRepeated: existingLog ? !!existingLog.isRepeated : false,
+            performedExercises: JSON.parse(JSON.stringify(newPerformed)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true,
+            synced: false
+          });
+
+          showToast(`✓ Scheda Giorno ${selectedSession.value} aggiornata e applicata all'Allenamento!`);
+          await loadLogs();
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          } else {
+            triggerDebouncedSync(500);
+          }
         }
 
         async function addNewExerciseToCatalog() {
