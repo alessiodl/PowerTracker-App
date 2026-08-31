@@ -1487,16 +1487,54 @@
           );
         }
 
-        function clearWorkout() {
+        async function clearWorkout() {
+          const now = new Date().toISOString();
+          const allLogs = await db.workoutLogs.toArray();
+          const existingLog = allLogs.find(l => 
+            !l.isDeleted &&
+            l.date === currentWorkout.date && 
+            l.program === selectedProgram.value && 
+            l.week === selectedWeek.value && 
+            l.session === selectedSession.value
+          );
+
+          if (existingLog) {
+            await db.workoutLogs.put({
+              ...existingLog,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          } else if (currentWorkout.id) {
+            await db.workoutLogs.put({
+              id: currentWorkout.id,
+              date: currentWorkout.date,
+              program: selectedProgram.value,
+              week: selectedWeek.value,
+              session: selectedSession.value,
+              isRepeated: false,
+              performedExercises: [],
+              updatedAt: now,
+              isDeleted: true,
+              _dirty: true,
+              synced: false
+            });
+          }
+
           currentWorkout.performedExercises = [];
-          showToast('Esercizi rimossi dall\'allenamento.');
+          currentWorkout.id = generateUUID();
+          await loadLogs();
+          showToast('Allenamento svuotato ed eliminato!');
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          }
         }
 
         function requestClearWorkout() {
           askConfirm(
             'Svuota Allenamento',
-            `Vuoi davvero rimuovere tutti gli esercizi da questo allenamento?`,
-            () => clearWorkout()
+            `Vuoi davvero rimuovere tutti gli esercizi da questo allenamento e cancellare la sessione registrata?`,
+            async () => { await clearWorkout(); }
           );
         }
 
@@ -1633,16 +1671,34 @@
           );
         }
 
-        function clearPlan() {
+        async function clearPlan() {
+          const now = new Date().toISOString();
+          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
           currentPlan.exercises = [];
-          showToast('Scheda svuotata. Ricordati di salvare le modifiche!');
+          
+          await db.templates.put({
+            id: tId,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            exercises: [],
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true
+          });
+
+          showToast('Scheda svuotata!');
+          await loadSelectedPlanAndWorkout();
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          }
         }
 
         function requestClearPlan() {
           askConfirm(
             'Svuota Scheda Target',
             `Vuoi davvero rimuovere tutti gli esercizi dalla scheda del Giorno ${selectedSession.value} (W${selectedWeek.value})?`,
-            () => clearPlan()
+            async () => { await clearPlan(); }
           );
         }
 

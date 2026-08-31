@@ -83,317 +83,268 @@ function doPost(e) {
     var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
     var sheetSet = ss.getSheetByName("Impostazioni") || ss.insertSheet("Impostazioni");
 
-    if (sheetCat.getLastRow() === 0) {
+    if (action === "sync") {
+      // ==========================================
+      // 1. CATALOGO ESERCIZI (In-memory merge + batch update)
+      // ==========================================
+      var catMap = {};
+      if (sheetCat.getLastRow() > 1) {
+        var cRows = sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues();
+        for (var i = 0; i < cRows.length; i++) {
+          var cid = String(cRows[i][0]);
+          if (cid) {
+            catMap[cid] = {
+              id: cid,
+              name: String(cRows[i][1] || ""),
+              category: String(cRows[i][2] || "accessory"),
+              updatedAt: cRows[i][3] instanceof Date ? cRows[i][3].toISOString() : String(cRows[i][3] || ""),
+              isDeleted: cRows[i][4] === "Sì"
+            };
+          }
+        }
+      }
+      var clientExercises = payload.exercises || [];
+      for (var i = 0; i < clientExercises.length; i++) {
+        var cex = clientExercises[i];
+        var cid = String(cex.id);
+        var cup = cex.updatedAt ? new Date(cex.updatedAt).getTime() : new Date().getTime();
+        var exUp = catMap[cid] && catMap[cid].updatedAt ? new Date(catMap[cid].updatedAt).getTime() : 0;
+        if (!catMap[cid] || cup >= exUp) {
+          catMap[cid] = {
+            id: cid,
+            name: cex.name || "",
+            category: cex.category || "accessory",
+            updatedAt: cex.updatedAt || serverTime,
+            isDeleted: !!cex.isDeleted
+          };
+        }
+      }
+      sheetCat.clear();
       sheetCat.appendRow(["ID", "Nome", "Categoria", "DataAggiornamento", "Eliminato"]);
       sheetCat.getRange(1, 1, 1, 5).setFontWeight("bold");
-    }
-    if (sheetSch.getLastRow() === 0) {
+      var catOutRows = [];
+      var catList = Object.keys(catMap).map(function(k) { return catMap[k]; });
+      for (var i = 0; i < catList.length; i++) {
+        catOutRows.push([
+          catList[i].id, catList[i].name, catList[i].category, catList[i].updatedAt, catList[i].isDeleted ? "Sì" : "No"
+        ]);
+      }
+      if (catOutRows.length > 0) {
+        sheetCat.getRange(2, 1, catOutRows.length, 5).setValues(catOutRows);
+      }
+
+      // ==========================================
+      // 2. SCHEDE (TEMPLATES) (In-memory merge + batch update)
+      // ==========================================
+      var tplMap = {};
+      if (sheetSch.getLastRow() > 1) {
+        var sRows = sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues();
+        for (var i = 0; i < sRows.length; i++) {
+          var tid = String(sRows[i][0]);
+          if (tid) {
+            if (!tplMap[tid]) {
+              tplMap[tid] = {
+                id: tid,
+                program: Number(sRows[i][1]),
+                week: Number(sRows[i][2]),
+                session: String(sRows[i][3]),
+                exercises: [],
+                updatedAt: sRows[i][9] instanceof Date ? sRows[i][9].toISOString() : String(sRows[i][9] || ""),
+                isDeleted: sRows[i][10] === "Sì"
+              };
+            }
+            if (sRows[i][4]) {
+              tplMap[tid].exercises.push({
+                exerciseName: String(sRows[i][4]),
+                category: String(sRows[i][5] || ""),
+                target: String(sRows[i][6] || ""),
+                rest: String(sRows[i][7] || ""),
+                notes: String(sRows[i][8] || "")
+              });
+            }
+          }
+        }
+      }
+      var clientTemplates = payload.templates || [];
+      for (var i = 0; i < clientTemplates.length; i++) {
+        var ct = clientTemplates[i];
+        var tid = String(ct.id || ("p" + ct.program + "_w" + ct.week + "_s" + ct.session));
+        var cup = ct.updatedAt ? new Date(ct.updatedAt).getTime() : new Date().getTime();
+        var exUp = tplMap[tid] && tplMap[tid].updatedAt ? new Date(tplMap[tid].updatedAt).getTime() : 0;
+        if (!tplMap[tid] || cup >= exUp) {
+          tplMap[tid] = {
+            id: tid,
+            program: Number(ct.program),
+            week: Number(ct.week),
+            session: String(ct.session),
+            exercises: ct.exercises || [],
+            updatedAt: ct.updatedAt || serverTime,
+            isDeleted: !!ct.isDeleted
+          };
+        }
+      }
+      sheetSch.clear();
       sheetSch.appendRow(["ID_Scheda", "Programma", "Settimana", "Seduta", "Esercizio", "Categoria", "Target", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
       sheetSch.getRange(1, 1, 1, 11).setFontWeight("bold");
-    }
-    if (sheetAll.getLastRow() === 0) {
-      sheetAll.appendRow(["ID_Allenamento", "Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso", "Reps", "RPE", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
-      sheetAll.getRange(1, 1, 1, 17).setFontWeight("bold");
-    }
-    if (sheetSet.getLastRow() === 0) {
-      sheetSet.appendRow(["Chiave", "Valore", "DataAggiornamento"]);
-      sheetSet.getRange(1, 1, 1, 3).setFontWeight("bold");
-    }
-
-    if (action === "sync") {
-      var lastSyncTime = payload.lastSyncTimestamp ? new Date(payload.lastSyncTimestamp).getTime() : 0;
-
-      // ==========================================
-      // 1. PUSH & MERGE: CATALOGO ESERCIZI
-      // ==========================================
-      var clientExercises = payload.exercises || [];
-      var catData = sheetCat.getLastRow() > 1 ? sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues() : [];
-      var catRowMap = {};
-      for (var i = 0; i < catData.length; i++) {
-        var rowId = String(catData[i][0]);
-        if (rowId) catRowMap[rowId] = { rowIndex: i + 2, data: catData[i] };
-      }
-
-      for (var j = 0; j < clientExercises.length; j++) {
-        var ex = clientExercises[j];
-        var exId = String(ex.id);
-        var exUpdated = ex.updatedAt ? new Date(ex.updatedAt).getTime() : new Date().getTime();
-        var exDeleted = ex.isDeleted ? "Sì" : "No";
-
-        if (catRowMap[exId]) {
-          var existingUpdated = catRowMap[exId].data[3] ? new Date(catRowMap[exId].data[3]).getTime() : 0;
-          if (exUpdated >= existingUpdated) {
-            sheetCat.getRange(catRowMap[exId].rowIndex, 1, 1, 5).setValues([[
-              exId, ex.name || "", ex.category || "accessory", ex.updatedAt || serverTime, exDeleted
-            ]]);
+      var tplOutRows = [];
+      var tplList = Object.keys(tplMap).map(function(k) { return tplMap[k]; });
+      for (var i = 0; i < tplList.length; i++) {
+        var t = tplList[i];
+        var isDel = t.isDeleted ? "Sì" : "No";
+        if (!t.isDeleted && t.exercises && t.exercises.length > 0) {
+          for (var j = 0; j < t.exercises.length; j++) {
+            var ex = t.exercises[j];
+            tplOutRows.push([
+              t.id, t.program, t.week, t.session,
+              ex.exerciseName || "", ex.category || "", ex.target || "", ex.rest || "", ex.notes || "",
+              t.updatedAt, isDel
+            ]);
           }
         } else {
-          sheetCat.appendRow([exId, ex.name || "", ex.category || "accessory", ex.updatedAt || serverTime, exDeleted]);
+          tplOutRows.push([
+            t.id, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt, isDel
+          ]);
         }
+      }
+      if (tplOutRows.length > 0) {
+        sheetSch.getRange(2, 1, tplOutRows.length, 11).setValues(tplOutRows);
       }
 
       // ==========================================
-      // 2. PUSH & MERGE: SCHEDE TARGET (TEMPLATES)
+      // 3. ALLENAMENTI (WORKOUT LOGS) (In-memory merge + batch update)
       // ==========================================
-      var clientTemplates = payload.templates || [];
-      var schData = sheetSch.getLastRow() > 1 ? sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues() : [];
-      var schIdRows = {}; // ID_Scheda -> [rowIndexes]
-      for (var i = 0; i < schData.length; i++) {
-        var tId = String(schData[i][0]);
-        if (tId) {
-          if (!schIdRows[tId]) schIdRows[tId] = [];
-          schIdRows[tId].push({ rowIndex: i + 2, data: schData[i] });
-        }
-      }
+      var logMap = {};
+      if (sheetAll.getLastRow() > 1) {
+        var aRows = sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues();
+        for (var i = 0; i < aRows.length; i++) {
+          var lid = String(aRows[i][0]);
+          if (lid) {
+            var date = aRows[i][1] instanceof Date ? Utilities.formatDate(aRows[i][1], Session.getScriptTimeZone(), "yyyy-MM-dd") : String(aRows[i][1] || "");
+            var prog = Number(aRows[i][2]);
+            var week = Number(aRows[i][3]);
+            var sess = String(aRows[i][4]);
+            var isRep = aRows[i][5] === "Sì";
+            var exName = String(aRows[i][6] || "");
+            var exCat = String(aRows[i][7] || "");
+            var exTarg = String(aRows[i][8] || "");
+            var setNum = Number(aRows[i][9] || 1);
+            var weight = aRows[i][10] !== "" ? Number(aRows[i][10]) : null;
+            var reps = aRows[i][11] !== "" ? Number(aRows[i][11]) : null;
+            var rpe = String(aRows[i][12] || "");
+            var rest = String(aRows[i][13] || "");
+            var notes = String(aRows[i][14] || "");
+            var upTime = aRows[i][15] instanceof Date ? aRows[i][15].toISOString() : String(aRows[i][15] || "");
+            var isDel = aRows[i][16] === "Sì";
 
-      for (var j = 0; j < clientTemplates.length; j++) {
-        var t = clientTemplates[j];
-        var tId = String(t.id || ("p" + t.program + "_w" + t.week + "_s" + t.session));
-        var tUpdated = t.updatedAt ? new Date(t.updatedAt).getTime() : new Date().getTime();
-        var tDeleted = t.isDeleted ? "Sì" : "No";
-        var tExs = t.exercises || [];
-
-        // Rimuovi eventuali righe precedenti per questo ID_Scheda prima di riscriverle
-        if (schIdRows[tId] && schIdRows[tId].length > 0) {
-          var existingUpdated = schIdRows[tId][0].data[9] ? new Date(schIdRows[tId][0].data[9]).getTime() : 0;
-          if (tUpdated >= existingUpdated) {
-            // Elimina righe dal basso verso l'alto
-            var indicesToDelete = schIdRows[tId].map(function(r) { return r.rowIndex; }).sort(function(a,b){ return b - a; });
-            for (var k = 0; k < indicesToDelete.length; k++) {
-              sheetSch.deleteRow(indicesToDelete[k]);
+            if (!logMap[lid]) {
+              logMap[lid] = {
+                id: lid,
+                date: date,
+                program: prog,
+                week: week,
+                session: sess,
+                isRepeated: isRep,
+                performedExercises: [],
+                updatedAt: upTime,
+                isDeleted: isDel,
+                synced: true
+              };
             }
-            // Scrivi le nuove righe
-            if (!t.isDeleted && tExs.length > 0) {
-              for (var k = 0; k < tExs.length; k++) {
-                sheetSch.appendRow([
-                  tId, t.program, t.week, t.session,
-                  tExs[k].exerciseName || "", tExs[k].category || "", tExs[k].target || "", tExs[k].rest || "", tExs[k].notes || "",
-                  t.updatedAt || serverTime, tDeleted
-                ]);
-              }
-            } else if (t.isDeleted) {
-              sheetSch.appendRow([tId, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt || serverTime, "Sì"]);
-            }
-          }
-        } else {
-          if (!t.isDeleted && tExs.length > 0) {
-            for (var k = 0; k < tExs.length; k++) {
-              sheetSch.appendRow([
-                tId, t.program, t.week, t.session,
-                tExs[k].exerciseName || "", tExs[k].category || "", tExs[k].target || "", tExs[k].rest || "", tExs[k].notes || "",
-                t.updatedAt || serverTime, tDeleted
-              ]);
-            }
-          } else if (t.isDeleted) {
-            sheetSch.appendRow([tId, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt || serverTime, "Sì"]);
-          }
-        }
-      }
-
-      // ==========================================
-      // 3. PUSH & MERGE: ALLENAMENTI (WORKOUT LOGS)
-      // ==========================================
-      var clientLogs = payload.workoutLogs || [];
-      var allData = sheetAll.getLastRow() > 1 ? sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues() : [];
-      var allIdRows = {}; // ID_Allenamento -> [rowIndexes]
-      for (var i = 0; i < allData.length; i++) {
-        var lId = String(allData[i][0]);
-        if (lId) {
-          if (!allIdRows[lId]) allIdRows[lId] = [];
-          allIdRows[lId].push({ rowIndex: i + 2, data: allData[i] });
-        }
-      }
-
-      for (var j = 0; j < clientLogs.length; j++) {
-        var log = clientLogs[j];
-        var logId = String(log.id);
-        var logUpdated = log.updatedAt ? new Date(log.updatedAt).getTime() : new Date().getTime();
-        var logDeleted = log.isDeleted ? "Sì" : "No";
-        var isRep = log.isRepeated ? "Sì" : "No";
-        var pExs = log.performedExercises || [];
-
-        if (allIdRows[logId] && allIdRows[logId].length > 0) {
-          var existingUpdated = allIdRows[logId][0].data[15] ? new Date(allIdRows[logId][0].data[15]).getTime() : 0;
-          if (logUpdated >= existingUpdated) {
-            var indicesToDelete = allIdRows[logId].map(function(r) { return r.rowIndex; }).sort(function(a,b){ return b - a; });
-            for (var k = 0; k < indicesToDelete.length; k++) {
-              sheetAll.deleteRow(indicesToDelete[k]);
-            }
-            if (!log.isDeleted && pExs.length > 0) {
-              for (var k = 0; k < pExs.length; k++) {
-                var ex = pExs[k];
-                var sets = ex.sets || [];
-                for (var s = 0; s < sets.length; s++) {
-                  var set = sets[s];
-                  sheetAll.appendRow([
-                    logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep,
-                    ex.exerciseName || "", ex.category || "", ex.targetReference || "",
-                    set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
-                    set.rpe || "", set.rest || "", set.notes || "",
-                    log.updatedAt || serverTime, logDeleted
-                  ]);
+            if (exName) {
+              var exObj = null;
+              for (var k = 0; k < logMap[lid].performedExercises.length; k++) {
+                if (logMap[lid].performedExercises[k].exerciseName === exName) {
+                  exObj = logMap[lid].performedExercises[k];
+                  break;
                 }
               }
-            } else if (log.isDeleted) {
-              sheetAll.appendRow([logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep, "", "", "", "", "", "", "", "", "", log.updatedAt || serverTime, "Sì"]);
+              if (!exObj) {
+                exObj = { exerciseName: exName, category: exCat, targetReference: exTarg, sets: [] };
+                logMap[lid].performedExercises.push(exObj);
+              }
+              exObj.sets.push({ setNum: setNum, weight: weight, reps: reps, rpe: rpe, rest: rest, notes: notes });
+            }
+          }
+        }
+      }
+      var clientLogs = payload.workoutLogs || [];
+      for (var i = 0; i < clientLogs.length; i++) {
+        var clog = clientLogs[i];
+        var lid = String(clog.id);
+        var cup = clog.updatedAt ? new Date(clog.updatedAt).getTime() : new Date().getTime();
+        var exUp = logMap[lid] && logMap[lid].updatedAt ? new Date(logMap[lid].updatedAt).getTime() : 0;
+        if (!logMap[lid] || cup >= exUp) {
+          logMap[lid] = {
+            id: lid,
+            date: clog.date || "",
+            program: Number(clog.program),
+            week: Number(clog.week),
+            session: String(clog.session),
+            isRepeated: !!clog.isRepeated,
+            performedExercises: clog.performedExercises || [],
+            updatedAt: clog.updatedAt || serverTime,
+            isDeleted: !!clog.isDeleted,
+            synced: true
+          };
+        }
+      }
+      sheetAll.clear();
+      sheetAll.appendRow(["ID_Allenamento", "Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso", "Reps", "RPE", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
+      sheetAll.getRange(1, 1, 1, 17).setFontWeight("bold");
+      var logOutRows = [];
+      var logList = Object.keys(logMap).map(function(k) {
+        var l = logMap[k];
+        if (l.performedExercises) {
+          l.performedExercises.forEach(function(ex) { ex.sets.sort(function(a, b) { return a.setNum - b.setNum; }); });
+        }
+        return l;
+      });
+      for (var i = 0; i < logList.length; i++) {
+        var l = logList[i];
+        var isDel = l.isDeleted ? "Sì" : "No";
+        var isRep = l.isRepeated ? "Sì" : "No";
+        var pExs = l.performedExercises || [];
+        if (!l.isDeleted && pExs.length > 0) {
+          for (var j = 0; j < pExs.length; j++) {
+            var ex = pExs[j];
+            var sets = ex.sets || [];
+            for (var s = 0; s < sets.length; s++) {
+              var set = sets[s];
+              logOutRows.push([
+                l.id, l.date, l.program, l.week, l.session, isRep,
+                ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                set.rpe || "", set.rest || "", set.notes || "",
+                l.updatedAt, isDel
+              ]);
             }
           }
         } else {
-          if (!log.isDeleted && pExs.length > 0) {
-            for (var k = 0; k < pExs.length; k++) {
-              var ex = pExs[k];
-              var sets = ex.sets || [];
-              for (var s = 0; s < sets.length; s++) {
-                var set = sets[s];
-                sheetAll.appendRow([
-                  logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep,
-                  ex.exerciseName || "", ex.category || "", ex.targetReference || "",
-                  set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
-                  set.rpe || "", set.rest || "", set.notes || "",
-                  log.updatedAt || serverTime, logDeleted
-                ]);
-              }
-            }
-          } else if (log.isDeleted) {
-            sheetAll.appendRow([logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep, "", "", "", "", "", "", "", "", "", log.updatedAt || serverTime, "Sì"]);
-          }
+          logOutRows.push([
+            l.id, l.date, l.program, l.week, l.session, isRep,
+            "", "", "", "", "", "", "", "", "",
+            l.updatedAt, isDel
+          ]);
         }
+      }
+      if (logOutRows.length > 0) {
+        sheetAll.getRange(2, 1, logOutRows.length, 17).setValues(logOutRows);
       }
 
       // ==========================================
-      // 4. PUSH & MERGE: IMPOSTAZIONI
+      // 4. IMPOSTAZIONI
       // ==========================================
-      if (payload.userSettings) {
-        var setData = sheetSet.getLastRow() > 1 ? sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues() : [];
-        var bwFound = false;
-        for (var i = 0; i < setData.length; i++) {
-          if (setData[i][0] === "bodyWeight") {
-            bwFound = true;
-            sheetSet.getRange(i + 2, 2, 1, 2).setValues([[payload.userSettings.bodyWeight || "", serverTime]]);
-            break;
-          }
-        }
-        if (!bwFound && payload.userSettings.bodyWeight !== undefined) {
-          sheetSet.appendRow(["bodyWeight", payload.userSettings.bodyWeight || "", serverTime]);
-        }
-      }
-
-      // ==========================================
-      // 5. PULL: LETTURA STATO AGGIORNATO (TUTTO O DELTA)
-      // ==========================================
-      var finalExercises = [];
-      if (sheetCat.getLastRow() > 1) {
-        var rows = sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues();
-        for (var i = 0; i < rows.length; i++) {
-          finalExercises.push({
-            id: String(rows[i][0]),
-            name: String(rows[i][1] || ""),
-            category: String(rows[i][2] || "accessory"),
-            updatedAt: rows[i][3] instanceof Date ? rows[i][3].toISOString() : String(rows[i][3] || ""),
-            isDeleted: rows[i][4] === "Sì"
-          });
-        }
-      }
-
-      var finalTemplatesMap = {};
-      if (sheetSch.getLastRow() > 1) {
-        var rows = sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues();
-        for (var i = 0; i < rows.length; i++) {
-          var tId = String(rows[i][0]);
-          var prog = Number(rows[i][1]);
-          var week = Number(rows[i][2]);
-          var sess = String(rows[i][3]);
-          var upTime = rows[i][9] instanceof Date ? rows[i][9].toISOString() : String(rows[i][9] || "");
-          var isDel = rows[i][10] === "Sì";
-
-          if (!finalTemplatesMap[tId]) {
-            finalTemplatesMap[tId] = {
-              id: tId,
-              program: prog,
-              week: week,
-              session: sess,
-              exercises: [],
-              updatedAt: upTime,
-              isDeleted: isDel
-            };
-          }
-          if (rows[i][4]) {
-            finalTemplatesMap[tId].exercises.push({
-              exerciseName: String(rows[i][4]),
-              category: String(rows[i][5] || ""),
-              target: String(rows[i][6] || ""),
-              rest: String(rows[i][7] || ""),
-              notes: String(rows[i][8] || "")
-            });
-          }
-        }
-      }
-      var finalTemplates = Object.keys(finalTemplatesMap).map(function(k) { return finalTemplatesMap[k]; });
-
-      var finalLogsMap = {};
-      if (sheetAll.getLastRow() > 1) {
-        var rows = sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues();
-        for (var i = 0; i < rows.length; i++) {
-          var logId = String(rows[i][0]);
-          var date = rows[i][1] instanceof Date ? Utilities.formatDate(rows[i][1], Session.getScriptTimeZone(), "yyyy-MM-dd") : String(rows[i][1]);
-          var prog = Number(rows[i][2]);
-          var week = Number(rows[i][3]);
-          var sess = String(rows[i][4]);
-          var isRep = rows[i][5] === "Sì";
-          var exName = String(rows[i][6] || "");
-          var exCat = String(rows[i][7] || "");
-          var exTarg = String(rows[i][8] || "");
-          var setNum = Number(rows[i][9] || 1);
-          var weight = rows[i][10] !== "" ? Number(rows[i][10]) : null;
-          var reps = rows[i][11] !== "" ? Number(rows[i][11]) : null;
-          var rpe = String(rows[i][12] || "");
-          var rest = String(rows[i][13] || "");
-          var notes = String(rows[i][14] || "");
-          var upTime = rows[i][15] instanceof Date ? rows[i][15].toISOString() : String(rows[i][15] || "");
-          var isDel = rows[i][16] === "Sì";
-
-          if (!finalLogsMap[logId]) {
-            finalLogsMap[logId] = {
-              id: logId,
-              date: date,
-              program: prog,
-              week: week,
-              session: sess,
-              isRepeated: isRep,
-              performedExercises: [],
-              updatedAt: upTime,
-              isDeleted: isDel,
-              synced: true
-            };
-          }
-
-          if (exName) {
-            var ex = null;
-            for (var j = 0; j < finalLogsMap[logId].performedExercises.length; j++) {
-              if (finalLogsMap[logId].performedExercises[j].exerciseName === exName) {
-                ex = finalLogsMap[logId].performedExercises[j];
-                break;
-              }
-            }
-            if (!ex) {
-              ex = { exerciseName: exName, category: exCat, targetReference: exTarg, sets: [] };
-              finalLogsMap[logId].performedExercises.push(ex);
-            }
-            ex.sets.push({ setNum: setNum, weight: weight, reps: reps, rpe: rpe, rest: rest, notes: notes });
-          }
-        }
-      }
-      var finalLogs = Object.keys(finalLogsMap).map(function(k) {
-        var log = finalLogsMap[k];
-        log.performedExercises.forEach(function(ex) { ex.sets.sort(function(a, b) { return a.setNum - b.setNum; }); });
-        return log;
-      });
-
       var finalSettings = { bodyWeight: "" };
-      if (sheetSet.getLastRow() > 1) {
-        var rows = sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues();
-        for (var i = 0; i < rows.length; i++) {
-          if (rows[i][0] === "bodyWeight") finalSettings.bodyWeight = rows[i][1];
+      if (payload.userSettings && payload.userSettings.bodyWeight !== undefined) {
+        finalSettings.bodyWeight = payload.userSettings.bodyWeight;
+        sheetSet.clear();
+        sheetSet.appendRow(["Chiave", "Valore", "DataAggiornamento"]);
+        sheetSet.getRange(1, 1, 1, 3).setFontWeight("bold");
+        sheetSet.appendRow(["bodyWeight", payload.userSettings.bodyWeight || "", serverTime]);
+      } else if (sheetSet.getLastRow() > 1) {
+        var setRows = sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues();
+        for (var i = 0; i < setRows.length; i++) {
+          if (setRows[i][0] === "bodyWeight") finalSettings.bodyWeight = setRows[i][1];
         }
       }
 
@@ -401,9 +352,9 @@ function doPost(e) {
         status: "success",
         serverTime: serverTime,
         data: {
-          exercises: finalExercises,
-          templates: finalTemplates,
-          workoutLogs: finalLogs,
+          exercises: catList,
+          templates: tplList,
+          workoutLogs: logList,
           userSettings: finalSettings
         }
       })).setMimeType(ContentService.MimeType.JSON);
