@@ -775,19 +775,22 @@
           <div class="space-y-2.5">
             <div v-for="log in workoutLogs" :key="log.id" class="dark:bg-slate-950 bg-slate-50 p-3 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs space-y-2">
               <div class="flex items-center justify-between">
-                <div>
-                  <span class="font-mono font-bold dark:text-slate-100 text-slate-900 mr-2">{{ log.date }}</span>
-                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-mono font-bold border border-amber-500/20 mr-1">
-                    P{{ log.program }} W{{ log.week }} - Giorno {{ log.session }}
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold dark:text-slate-100 text-slate-900 text-xs">{{ formatDateIT(log.date) }}</span>
+                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-mono font-bold border border-amber-500/20">
+                    P{{ log.program }}-W{{ log.week }}-{{ log.session }}
                   </span>
-                  <span v-if="log.isRepeated" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-[2px] text-[10px] font-mono font-bold border border-purple-500/20">
+                  <span v-if="log.isRepeated" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-[2px] text-[9px] font-mono font-bold border border-purple-500/20">
                     RIPETUTO
                   </span>
                 </div>
 
-                <span class="px-1.5 py-0.5 rounded-[2px] text-[9px] font-mono font-bold uppercase" :class="log.synced ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30'">
-                  {{ log.synced ? 'Sincronizzato' : 'Locale' }}
-                </span>
+                <div class="flex items-center gap-1">
+                  <span v-if="log.synced" class="text-emerald-500 font-bold text-sm leading-none" title="Sincronizzato">✓</span>
+                  <span v-else class="px-1.5 py-0.5 rounded-[2px] text-[9px] font-mono font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                    Locale
+                  </span>
+                </div>
               </div>
 
               <div class="dark:text-slate-400 text-slate-600 text-[11px] font-mono">
@@ -1036,6 +1039,15 @@
           const month = String(d.getMonth() + 1).padStart(2, '0');
           const day = String(d.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
+        }
+
+        function formatDateIT(dateStr) {
+          if (!dateStr) return '';
+          const parts = String(dateStr).split('-');
+          if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+          return dateStr;
         }
 
         const selectedProgram = ref(Number(localStorage.getItem('pl_selected_program')) || 1);
@@ -2402,6 +2414,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           openExerciseHistory,
           openExerciseHistoryFromSelect,
           allExerciseNames,
+          formatDateIT,
           onFilterChange,
           onWorkoutDateChange,
           onWorkoutDataInput,
