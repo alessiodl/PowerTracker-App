@@ -394,6 +394,7 @@
                         type="number" 
                         step="0.5" 
                         v-model.number="set.weight" 
+                        @input="onWorkoutDataInput"
                         placeholder="kg" 
                         class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
                       />
@@ -406,7 +407,7 @@
                         min="0" 
                         step="1" 
                         v-model.number="set.reps" 
-                        @input="set.reps = set.reps !== null && set.reps !== '' ? Math.max(0, Math.floor(set.reps)) : null"
+                        @input="onRepsInput(set)"
                         placeholder="reps" 
                         class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-bold"
                       />
@@ -417,6 +418,7 @@
                       <input 
                         type="text" 
                         v-model="set.rpe" 
+                        @input="onWorkoutDataInput"
                         placeholder="@8" 
                         title="RPE o RIR percepito"
                         class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 text-center"
@@ -429,6 +431,7 @@
                         <input 
                           type="text" 
                           v-model="set.rest" 
+                          @input="onWorkoutDataInput"
                           placeholder="mm:ss" 
                           class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
                         />
@@ -981,25 +984,25 @@
         const lastSyncTime = ref(localStorage.getItem('pl_last_sync_time') || '');
         const pendingChangesCount = ref(0);
 
-        const selectedProgram = ref(1);
-        const selectedWeek = ref(1);
-        const selectedSession = ref('A');
+        const selectedProgram = ref(Number(localStorage.getItem('pl_selected_program')) || 1);
+        const selectedWeek = ref(Number(localStorage.getItem('pl_selected_week')) || 1);
+        const selectedSession = ref(localStorage.getItem('pl_selected_session') || 'A');
 
         const exercises = ref([]);
         const currentPlan = reactive({
           id: '',
-          program: 1,
-          week: 1,
-          session: 'A',
+          program: selectedProgram.value,
+          week: selectedWeek.value,
+          session: selectedSession.value,
           exercises: []
         });
 
         const currentWorkout = reactive({
           id: '',
           date: new Date().toISOString().split('T')[0],
-          program: 1,
-          week: 1,
-          session: 'A',
+          program: selectedProgram.value,
+          week: selectedWeek.value,
+          session: selectedSession.value,
           isRepeated: false,
           performedExercises: []
         });
@@ -1395,69 +1398,124 @@
           exercises.value = list.filter(e => !e.isDeleted);
         }
 
-        async function loadSelectedPlanAndWorkout() {
-          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
-          const plan = await db.templates.get(tId);
+        let isInternalLoading = false;
+        let autoSaveDebounceTimer = null;
 
-          if (plan && !plan.isDeleted) {
-            currentPlan.id = plan.id;
-            currentPlan.program = plan.program;
-            currentPlan.week = plan.week;
-            currentPlan.session = plan.session;
-            currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises || []));
-          } else {
-            currentPlan.id = tId;
-            currentPlan.program = selectedProgram.value;
-            currentPlan.week = selectedWeek.value;
-            currentPlan.session = selectedSession.value;
-            currentPlan.exercises = [];
-          }
+        async function autoSaveWorkoutLocally() {
+          if (isInternalLoading) return;
+          if (!currentWorkout.performedExercises || currentWorkout.performedExercises.length === 0) return;
+          
+          const hasAnyData = currentWorkout.performedExercises.some(ex => 
+            (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+          );
+          if (!hasAnyData) return;
 
-          // Cerca se esiste già un log registrato per questa sessione
-          const allLogs = await db.workoutLogs.toArray();
-          const matchingLogs = allLogs.filter(l => 
-            !l.isDeleted &&
-            l.program === selectedProgram.value && 
-            l.week === selectedWeek.value && 
-            l.session === selectedSession.value
-          ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+          const now = new Date().toISOString();
+          const logId = currentWorkout.id || generateUUID();
+          currentWorkout.id = logId;
 
-          let existingLog = null;
-          if (preserveDate && currentWorkout.date) {
-            existingLog = matchingLogs.find(l => l.date === currentWorkout.date);
-          } else if (matchingLogs.length > 0) {
-            existingLog = matchingLogs[0];
-          }
+          const logData = {
+            id: logId,
+            date: currentWorkout.date,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            isRepeated: !!currentWorkout.isRepeated,
+            performedExercises: JSON.parse(JSON.stringify(currentWorkout.performedExercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true,
+            synced: false
+          };
 
-          if (existingLog) {
-            currentWorkout.id = existingLog.id;
-            currentWorkout.date = existingLog.date;
-            currentWorkout.program = existingLog.program;
-            currentWorkout.week = existingLog.week;
-            currentWorkout.session = existingLog.session;
-            currentWorkout.isRepeated = !!existingLog.isRepeated;
-            currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
-          } else {
-            currentWorkout.id = generateUUID();
-            if (!preserveDate) {
-              currentWorkout.date = new Date().toISOString().split('T')[0];
+          await db.workoutLogs.put(logData);
+          await loadLogs();
+          triggerDebouncedSync(3000);
+        }
+
+        function onWorkoutDataInput() {
+          if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+          autoSaveDebounceTimer = setTimeout(() => {
+            autoSaveWorkoutLocally();
+          }, 600);
+        }
+
+        function onRepsInput(set) {
+          set.reps = set.reps !== null && set.reps !== '' ? Math.max(0, Math.floor(set.reps)) : null;
+          onWorkoutDataInput();
+        }
+
+        async function loadSelectedPlanAndWorkout(preserveDate = false) {
+          isInternalLoading = true;
+          try {
+            const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+            const plan = await db.templates.get(tId);
+
+            if (plan && !plan.isDeleted) {
+              currentPlan.id = plan.id;
+              currentPlan.program = plan.program;
+              currentPlan.week = plan.week;
+              currentPlan.session = plan.session;
+              currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises || []));
+            } else {
+              currentPlan.id = tId;
+              currentPlan.program = selectedProgram.value;
+              currentPlan.week = selectedWeek.value;
+              currentPlan.session = selectedSession.value;
+              currentPlan.exercises = [];
             }
-            currentWorkout.program = selectedProgram.value;
-            currentWorkout.week = selectedWeek.value;
-            currentWorkout.session = selectedSession.value;
-            currentWorkout.isRepeated = false;
-            currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
-              exerciseName: item.exerciseName,
-              category: item.category,
-              targetReference: item.target,
-              sets: [
-                { setNum: 1, weight: null, reps: null, rest: '', rpe: '', notes: item.notes || '' }
-              ]
-            }));
+
+            // Cerca se esiste già un log registrato per questa sessione
+            const allLogs = await db.workoutLogs.toArray();
+            const matchingLogs = allLogs.filter(l => 
+              !l.isDeleted &&
+              l.program === selectedProgram.value && 
+              l.week === selectedWeek.value && 
+              l.session === selectedSession.value
+            ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+            let existingLog = null;
+            if (preserveDate && currentWorkout.date) {
+              existingLog = matchingLogs.find(l => l.date === currentWorkout.date);
+            } else if (matchingLogs.length > 0) {
+              existingLog = matchingLogs[0];
+            }
+
+            if (existingLog) {
+              currentWorkout.id = existingLog.id;
+              currentWorkout.date = existingLog.date;
+              currentWorkout.program = existingLog.program;
+              currentWorkout.week = existingLog.week;
+              currentWorkout.session = existingLog.session;
+              currentWorkout.isRepeated = !!existingLog.isRepeated;
+              currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
+            } else {
+              currentWorkout.id = generateUUID();
+              if (!preserveDate) {
+                currentWorkout.date = new Date().toISOString().split('T')[0];
+              }
+              currentWorkout.program = selectedProgram.value;
+              currentWorkout.week = selectedWeek.value;
+              currentWorkout.session = selectedSession.value;
+              currentWorkout.isRepeated = false;
+              currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+                exerciseName: item.exerciseName,
+                category: item.category,
+                targetReference: item.target,
+                sets: [
+                  { setNum: 1, weight: null, reps: null, rest: '', rpe: '', notes: item.notes || '' }
+                ]
+              }));
+            }
+          } finally {
+            isInternalLoading = false;
           }
         }
 
         async function onFilterChange() {
+          localStorage.setItem('pl_selected_program', String(selectedProgram.value));
+          localStorage.setItem('pl_selected_week', String(selectedWeek.value));
+          localStorage.setItem('pl_selected_session', String(selectedSession.value));
           await loadSelectedPlanAndWorkout(false);
         }
 
@@ -1469,6 +1527,9 @@
           selectedProgram.value = log.program;
           selectedWeek.value = log.week;
           selectedSession.value = log.session;
+          localStorage.setItem('pl_selected_program', String(log.program));
+          localStorage.setItem('pl_selected_week', String(log.week));
+          localStorage.setItem('pl_selected_session', String(log.session));
           currentWorkout.id = log.id;
           currentWorkout.date = log.date;
           currentWorkout.program = log.program;
@@ -1491,10 +1552,12 @@
             rpe: prevSet ? prevSet.rpe : '',
             notes: ''
           });
+          autoSaveWorkoutLocally();
         }
 
         function removeSet(exIdx, sIdx) {
           currentWorkout.performedExercises[exIdx].sets.splice(sIdx, 1);
+          autoSaveWorkoutLocally();
         }
 
         function requestRemoveSet(exIdx, sIdx, exName) {
@@ -2248,6 +2311,8 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           allExerciseNames,
           onFilterChange,
           onWorkoutDateChange,
+          onWorkoutDataInput,
+          onRepsInput,
           editLogFromHistory,
           addSet,
           removeSet,
