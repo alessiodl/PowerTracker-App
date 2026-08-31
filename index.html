@@ -985,6 +985,14 @@
         const lastSyncTime = ref(localStorage.getItem('pl_last_sync_time') || '');
         const pendingChangesCount = ref(0);
 
+        function getTodayDateStr() {
+          const d = new Date();
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
         const selectedProgram = ref(Number(localStorage.getItem('pl_selected_program')) || 1);
         const selectedWeek = ref(Number(localStorage.getItem('pl_selected_week')) || 1);
         const selectedSession = ref(localStorage.getItem('pl_selected_session') || 'A');
@@ -1000,7 +1008,7 @@
 
         const currentWorkout = reactive({
           id: '',
-          date: new Date().toISOString().split('T')[0],
+          date: getTodayDateStr(),
           program: selectedProgram.value,
           week: selectedWeek.value,
           session: selectedSession.value,
@@ -1466,25 +1474,23 @@
               currentPlan.exercises = [];
             }
 
-            // Cerca se esiste già un log registrato per questa sessione
+            // La data di default è SEMPRE la data odierna locale
+            const todayStr = getTodayDateStr();
+            const targetDate = preserveDate && currentWorkout.date ? currentWorkout.date : todayStr;
+            currentWorkout.date = targetDate;
+
+            // Cerca se esiste già un log registrato per QUESTA specifica data e seduta
             const allLogs = await db.workoutLogs.toArray();
-            const matchingLogs = allLogs.filter(l => 
+            const existingLog = allLogs.find(l => 
               !l.isDeleted &&
+              l.date === targetDate &&
               l.program === selectedProgram.value && 
               l.week === selectedWeek.value && 
               l.session === selectedSession.value
-            ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-            let existingLog = null;
-            if (preserveDate && currentWorkout.date) {
-              existingLog = matchingLogs.find(l => l.date === currentWorkout.date);
-            } else if (matchingLogs.length > 0) {
-              existingLog = matchingLogs[0];
-            }
+            );
 
             if (existingLog) {
               currentWorkout.id = existingLog.id;
-              currentWorkout.date = existingLog.date;
               currentWorkout.program = existingLog.program;
               currentWorkout.week = existingLog.week;
               currentWorkout.session = existingLog.session;
@@ -1492,9 +1498,6 @@
               currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
             } else {
               currentWorkout.id = generateUUID();
-              if (!preserveDate) {
-                currentWorkout.date = new Date().toISOString().split('T')[0];
-              }
               currentWorkout.program = selectedProgram.value;
               currentWorkout.week = selectedWeek.value;
               currentWorkout.session = selectedSession.value;
@@ -1504,7 +1507,7 @@
                 category: item.category,
                 targetReference: item.target,
                 sets: [
-                  { setNum: 1, weight: null, reps: null, rest: '', rpe: '', notes: item.notes || '' }
+                  { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
                 ]
               }));
             }
