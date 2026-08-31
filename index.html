@@ -318,6 +318,7 @@
             <input 
               type="date" 
               v-model="currentWorkout.date" 
+              @change="onWorkoutDateChange"
               class="dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-[11px] p-1 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
             />
 
@@ -758,11 +759,11 @@
               </div>
 
               <div class="pt-1 flex justify-end gap-2">
-                <button @click="showLogDataModal(log)" class="px-2 py-0.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold rounded-[2px] text-[10px] font-mono uppercase">
-                  🔍 Mostra Dati
+                <button @click="editLogFromHistory(log)" class="px-2 py-0.5 bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-600/30 font-bold rounded-[2px] text-[10px] font-mono uppercase">
+                  ✏️ Carica
                 </button>
-                <button v-if="!log.synced" @click="syncLog(log)" class="px-2 py-0.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-[2px] text-[10px] font-mono uppercase">
-                  🔄 Sync
+                <button @click="showLogDataModal(log)" class="px-2 py-0.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold rounded-[2px] text-[10px] font-mono uppercase">
+                  🔍 Dati
                 </button>
                 <button @click="requestDeleteLog(log.id, log.date)" class="dark:text-slate-500 text-slate-400 hover:text-red-500 text-[10px] font-mono px-1">
                   Elimina
@@ -1412,18 +1413,25 @@
             currentPlan.exercises = [];
           }
 
-          // Cerca se esiste già un log registrato per questa specifica data e sessione
+          // Cerca se esiste già un log registrato per questa sessione
           const allLogs = await db.workoutLogs.toArray();
-          const existingLog = allLogs.find(l => 
+          const matchingLogs = allLogs.filter(l => 
             !l.isDeleted &&
-            l.date === currentWorkout.date && 
             l.program === selectedProgram.value && 
             l.week === selectedWeek.value && 
             l.session === selectedSession.value
-          );
+          ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+          let existingLog = null;
+          if (preserveDate && currentWorkout.date) {
+            existingLog = matchingLogs.find(l => l.date === currentWorkout.date);
+          } else if (matchingLogs.length > 0) {
+            existingLog = matchingLogs[0];
+          }
 
           if (existingLog) {
             currentWorkout.id = existingLog.id;
+            currentWorkout.date = existingLog.date;
             currentWorkout.program = existingLog.program;
             currentWorkout.week = existingLog.week;
             currentWorkout.session = existingLog.session;
@@ -1431,6 +1439,9 @@
             currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
           } else {
             currentWorkout.id = generateUUID();
+            if (!preserveDate) {
+              currentWorkout.date = new Date().toISOString().split('T')[0];
+            }
             currentWorkout.program = selectedProgram.value;
             currentWorkout.week = selectedWeek.value;
             currentWorkout.session = selectedSession.value;
@@ -1447,7 +1458,26 @@
         }
 
         async function onFilterChange() {
-          await loadSelectedPlanAndWorkout();
+          await loadSelectedPlanAndWorkout(false);
+        }
+
+        async function onWorkoutDateChange() {
+          await loadSelectedPlanAndWorkout(true);
+        }
+
+        function editLogFromHistory(log) {
+          selectedProgram.value = log.program;
+          selectedWeek.value = log.week;
+          selectedSession.value = log.session;
+          currentWorkout.id = log.id;
+          currentWorkout.date = log.date;
+          currentWorkout.program = log.program;
+          currentWorkout.week = log.week;
+          currentWorkout.session = log.session;
+          currentWorkout.isRepeated = !!log.isRepeated;
+          currentWorkout.performedExercises = JSON.parse(JSON.stringify(log.performedExercises || []));
+          activeTab.value = 'workout';
+          showToast(`Caricato allenamento del ${log.date}!`);
         }
 
         function addSet(exIdx) {
@@ -2217,6 +2247,8 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           openExerciseHistoryFromSelect,
           allExerciseNames,
           onFilterChange,
+          onWorkoutDateChange,
+          editLogFromHistory,
           addSet,
           removeSet,
           requestRemoveSet,
