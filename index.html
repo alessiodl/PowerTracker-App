@@ -1786,8 +1786,8 @@
         // MOTORE DI SINCRONIZZAZIONE A 2 VIE (OFFLINE-FIRST DELTA)
         // =========================================================
         async function syncWithCloud({ silent = false } = {}) {
-          if (!webhookUrl.value) {
-            if (!silent) showToast('Configura prima l\'URL del Webhook!');
+          if (!webhookUrl.value || !webhookUrl.value.trim()) {
+            if (!silent) showToast('Configura prima l\'URL del Webhook in "SYNC & STORICO"!');
             return;
           }
           if (!navigator.onLine) {
@@ -1797,7 +1797,10 @@
           if (isSyncingCloud.value) return;
 
           isSyncingCloud.value = true;
-          if (!silent) showToast('Sincronizzazione in corso...');
+          if (!silent) showToast('Sincronizzazione 2-Way in corso...');
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
 
           try {
             const allExercises = await db.exercises.toArray();
@@ -1820,17 +1823,28 @@
               }
             };
 
-            const res = await fetch(webhookUrl.value, {
+            const res = await fetch(webhookUrl.value.trim(), {
               method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify(payload)
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload),
+              signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
             if (!res.ok) {
-              throw new Error('Risposta HTTP del server non valida.');
+              throw new Error(`Risposta HTTP ${res.status}: ${res.statusText}`);
             }
 
-            const result = await res.json();
+            const textResponse = await res.text();
+            let result;
+            try {
+              result = JSON.parse(textResponse);
+            } catch (jsonErr) {
+              console.error('Risposta non JSON ricevuta da Google Apps Script:', textResponse);
+              throw new Error('Il Webhook non ha restituito JSON valido. Assicurati che l\'accesso sia impostato su "Chiunque" nelle impostazioni di distribuzione di Apps Script.');
+            }
+
             if (result.status === 'success' && result.data) {
               const data = result.data;
 
@@ -1851,7 +1865,6 @@
                   }
                 }
               }
-              // Rimuovi flag dirty dagli esercizi inviati
               for (const dex of dirtyExercises) {
                 if (dex.isDeleted) {
                   await db.exercises.delete(dex.id);
@@ -1938,17 +1951,22 @@
               await updatePendingCount();
 
               if (!silent) {
-                showToast('Sincronizzazione 2-Way completata!');
+                showToast('⚡ Sincronizzazione completata con successo!');
               }
             } else {
-              throw new Error(result.message || 'Dati non validi.');
+              throw new Error(result.message || 'Dati non validi restituiti dal server.');
             }
           } catch (err) {
+            clearTimeout(timeoutId);
             console.error('Errore durante la sincronizzazione:', err);
+            const errMsg = err.name === 'AbortError' 
+              ? 'Timeout connessione Google Sheets (20s). Riprova.' 
+              : (err.message || 'Errore durante la sincronizzazione Cloud.');
             if (!silent) {
-              showToast('Errore durante la sincronizzazione Cloud.');
+              showToast(`⚠️ ${errMsg}`);
             }
           } finally {
+            clearTimeout(timeoutId);
             isSyncingCloud.value = false;
             await updatePendingCount();
           }
