@@ -130,10 +130,12 @@
           </div>
           <div>
             <h1 class="font-extrabold text-xs uppercase tracking-widest leading-none dark:text-slate-100 text-slate-900">PowerTrack</h1>
-            <span class="text-[9px] text-sky-500 dark:text-sky-400 font-mono tracking-wider flex items-center gap-1 mt-0.5 uppercase font-semibold">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-sky-400 animate-pulse"></span>
-              OFFLINE READY
-            </span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="w-1.5 h-1.5 rounded-[1px]" :class="syncStatusDotClass"></span>
+              <span class="text-[9px] font-mono tracking-wider uppercase font-semibold" :class="syncStatusTextClass">
+                {{ syncStatusLabel }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -643,28 +645,40 @@
           </div>
         </div>
 
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
-          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Sincronizzazione Completa (Cloud)</h2>
-          <p class="text-xs dark:text-slate-400 text-slate-500">Invia o scarica l'intero database (schede, catalogo, allenamenti e peso corporeo) per sincronizzare più dispositivi.</p>
-          
-          <div class="grid grid-cols-2 gap-2">
-            <button 
-              @click="uploadFullDatabase" 
-              :disabled="isSyncingCloud || !webhookUrl"
-              class="px-2.5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
-            >
-              <span v-if="isSyncingCloud">⏳ Sincronizzazione...</span>
-              <span v-else>📤 Invia al Cloud</span>
-            </button>
-            <button 
-              @click="downloadFullDatabase" 
-              :disabled="isSyncingCloud || !webhookUrl"
-              class="px-2.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
-            >
-              <span v-if="isSyncingCloud">⏳ Sincronizzazione...</span>
-              <span v-else>📥 Scarica dal Cloud</span>
-            </button>
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Sincronizzazione Cloud (2-Way Sync)</h2>
+            <span class="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold uppercase" :class="syncStatusBadgeClass">
+              {{ syncStatusLabel }}
+            </span>
           </div>
+
+          <div class="dark:bg-slate-950 bg-slate-50 p-2.5 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs font-mono space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="dark:text-slate-400 text-slate-500">Ultima sincronizzazione:</span>
+              <span class="font-bold dark:text-slate-200 text-slate-800">{{ lastSyncTimeFormatted }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="dark:text-slate-400 text-slate-500">Modifiche locali in sospeso:</span>
+              <span class="font-bold" :class="pendingChangesCount > 0 ? 'text-amber-500' : 'text-emerald-500'">
+                {{ pendingChangesCount }} {{ pendingChangesCount === 1 ? 'elemento' : 'elementi' }}
+              </span>
+            </div>
+          </div>
+
+          <button 
+            @click="triggerManualSync" 
+            :disabled="isSyncingCloud || !webhookUrl"
+            class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99]"
+          >
+            <span v-if="isSyncingCloud" class="animate-spin">🔄</span>
+            <span v-else>⚡</span>
+            <span>{{ isSyncingCloud ? 'Sincronizzazione a due vie in corso...' : 'Sincronizza Ora' }}</span>
+          </button>
+
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed">
+            💡 <strong>Offline-First & Sicuro:</strong> La sincronizzazione unisce i dati locali con Google Sheets tramite risoluzione automatica (Last-Write-Wins). Non perdi mai le serie fatte offline!
+          </p>
         </div>
 
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
@@ -925,11 +939,22 @@
   <script>
     const { createApp, ref, reactive, computed, onMounted } = Vue;
 
+    // UUID Generator (supporta crypto.randomUUID con fallback)
+    function generateUUID() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
     const db = new Dexie('PowerliftingDB');
-    db.version(1).stores({
-      exercises: '++id, name, category',
-      templates: '[program+week+session], program, week, session',
-      workoutLogs: '++id, date, [program+week+session], synced'
+    db.version(2).stores({
+      exercises: 'id, name, category, updatedAt, isDeleted, _dirty',
+      templates: 'id, program, week, session, updatedAt, isDeleted, _dirty',
+      workoutLogs: 'id, date, program, week, session, updatedAt, isDeleted, _dirty'
     });
 
     createApp({
@@ -938,6 +963,9 @@
         const isDarkMode = ref(localStorage.getItem('pl_theme') === 'dark');
         const isImportingImage = ref(false);
         const isSyncingCloud = ref(false);
+        const isOnline = ref(navigator.onLine);
+        const lastSyncTime = ref(localStorage.getItem('pl_last_sync_time') || '');
+        const pendingChangesCount = ref(0);
 
         const selectedProgram = ref(1);
         const selectedWeek = ref(1);
@@ -945,6 +973,7 @@
 
         const exercises = ref([]);
         const currentPlan = reactive({
+          id: '',
           program: 1,
           week: 1,
           session: 'A',
@@ -952,6 +981,7 @@
         });
 
         const currentWorkout = reactive({
+          id: '',
           date: new Date().toISOString().split('T')[0],
           program: 1,
           week: 1,
@@ -963,6 +993,73 @@
         const workoutLogs = ref([]);
         const webhookUrl = ref(localStorage.getItem('pl_webhook_url') || '');
         const geminiApiKey = ref(localStorage.getItem('pl_gemini_key') || '');
+
+        // Debounce timer per auto-sync
+        let syncDebounceTimer = null;
+        function triggerDebouncedSync(delay = 2000) {
+          updatePendingCount();
+          if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+          syncDebounceTimer = setTimeout(() => {
+            syncWithCloud({ silent: true });
+          }, delay);
+        }
+
+        // Formattazione data ultima sync
+        const lastSyncTimeFormatted = computed(() => {
+          if (!lastSyncTime.value) return 'Mai sincronizzato';
+          try {
+            const d = new Date(lastSyncTime.value);
+            return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                   d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          } catch (e) {
+            return lastSyncTime.value;
+          }
+        });
+
+        // Stato dinamico di sincronizzazione per UI
+        const syncStatusLabel = computed(() => {
+          if (isSyncingCloud.value) return 'Sincronizzazione...';
+          if (!isOnline.value) return 'Offline';
+          if (!webhookUrl.value) return 'Pronto (Locale)';
+          if (pendingChangesCount.value > 0) return `${pendingChangesCount.value} in attesa`;
+          return 'Sincronizzato';
+        });
+
+        const syncStatusDotClass = computed(() => {
+          if (isSyncingCloud.value) return 'bg-sky-400 animate-spin';
+          if (!isOnline.value) return 'bg-slate-400';
+          if (!webhookUrl.value) return 'bg-amber-400';
+          if (pendingChangesCount.value > 0) return 'bg-amber-400 animate-pulse';
+          return 'bg-emerald-400';
+        });
+
+        const syncStatusTextClass = computed(() => {
+          if (isSyncingCloud.value) return 'text-sky-500 dark:text-sky-400';
+          if (!isOnline.value) return 'text-slate-400';
+          if (!webhookUrl.value) return 'text-amber-500 dark:text-amber-400';
+          if (pendingChangesCount.value > 0) return 'text-amber-500 dark:text-amber-400';
+          return 'text-emerald-500 dark:text-emerald-400';
+        });
+
+        const syncStatusBadgeClass = computed(() => {
+          if (isSyncingCloud.value) return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30';
+          if (!isOnline.value) return 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30';
+          if (!webhookUrl.value) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+          if (pendingChangesCount.value > 0) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+          return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        });
+
+        // Conteggio modifiche locali non sincronizzate
+        async function updatePendingCount() {
+          try {
+            const dirtyEx = await db.exercises.filter(e => !!e._dirty).count();
+            const dirtyTpl = await db.templates.filter(t => !!t._dirty).count();
+            const dirtyLogs = await db.workoutLogs.filter(l => !!l._dirty).count();
+            pendingChangesCount.value = dirtyEx + dirtyTpl + dirtyLogs;
+          } catch (e) {
+            console.warn('Errore conteggio pending:', e);
+          }
+        }
 
         // Livelli di Performance - Calcolatore BW
         const userBodyWeight = ref(localStorage.getItem('pl_body_weight') || '');
@@ -1003,6 +1100,7 @@
           activeBodyWeight.value = n;
           localStorage.setItem('pl_body_weight', String(n));
           showToast('Carichi calcolati in base al peso corporeo!');
+          triggerDebouncedSync(1000);
         }
 
         function resetLevels() {
@@ -1010,6 +1108,7 @@
           activeBodyWeight.value = null;
           localStorage.removeItem('pl_body_weight');
           showToast('Tabella ripristinata ai valori di default.');
+          triggerDebouncedSync(1000);
         }
 
         const newExercise = reactive({ name: '', category: 'variant' });
@@ -1058,10 +1157,14 @@
 
         const allExerciseNames = computed(() => {
           const names = new Set();
-          exercises.value.forEach(e => { if (e.name) names.add(e.name); });
-          workoutLogs.value.forEach(l => (l.performedExercises || []).forEach(ex => {
-            if (ex.exerciseName) names.add(ex.exerciseName);
-          }));
+          exercises.value.forEach(e => { if (e.name && !e.isDeleted) names.add(e.name); });
+          workoutLogs.value.forEach(l => {
+            if (!l.isDeleted) {
+              (l.performedExercises || []).forEach(ex => {
+                if (ex.exerciseName) names.add(ex.exerciseName);
+              });
+            }
+          });
           return Array.from(names).sort((a, b) => a.localeCompare(b));
         });
 
@@ -1101,17 +1204,97 @@
           setTimeout(() => { toastMessage.value = ''; }, 2500);
         }
 
+        // Migrazione trasparente dei dati v1 -> v2 (UUID e timestamp)
+        async function migrateDataIfNeeded() {
+          try {
+            const rawExercises = await db.exercises.toArray();
+            for (const ex of rawExercises) {
+              let changed = false;
+              const update = {};
+              if (!ex.id || typeof ex.id === 'number') {
+                update.id = generateUUID();
+                changed = true;
+                await db.exercises.delete(ex.id);
+              }
+              if (!ex.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
+              if (ex.isDeleted === undefined) { update.isDeleted = false; changed = true; }
+              if (ex._dirty === undefined) { update._dirty = true; changed = true; }
+              if (changed) {
+                await db.exercises.put({ ...ex, ...update });
+              }
+            }
+
+            const rawTemplates = await db.templates.toArray();
+            for (const t of rawTemplates) {
+              let changed = false;
+              const update = {};
+              const defaultId = `p${t.program}_w${t.week}_s${t.session}`;
+              if (!t.id) { update.id = defaultId; changed = true; }
+              if (!t.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
+              if (t.isDeleted === undefined) { update.isDeleted = false; changed = true; }
+              if (t._dirty === undefined) { update._dirty = true; changed = true; }
+              if (changed) {
+                await db.templates.put({ ...t, ...update });
+              }
+            }
+
+            const rawLogs = await db.workoutLogs.toArray();
+            for (const log of rawLogs) {
+              let changed = false;
+              const update = {};
+              if (!log.id || typeof log.id === 'number') {
+                update.id = generateUUID();
+                changed = true;
+                await db.workoutLogs.delete(log.id);
+              }
+              if (!log.updatedAt) { update.updatedAt = new Date().toISOString(); changed = true; }
+              if (log.isDeleted === undefined) { update.isDeleted = false; changed = true; }
+              if (log._dirty === undefined) { update._dirty = !log.synced; changed = true; }
+              if (changed) {
+                await db.workoutLogs.put({ ...log, ...update });
+              }
+            }
+          } catch (e) {
+            console.warn('Migrazione Dexie completata o non necessaria:', e);
+          }
+        }
+
         onMounted(async () => {
           applyTheme();
+          await migrateDataIfNeeded();
+
           const isInitialized = localStorage.getItem('pl_initialized') === 'true';
           if (!isInitialized) {
             await seedDefaultExercises();
             await seedDefaultPlanIfEmpty();
             localStorage.setItem('pl_initialized', 'true');
           }
+
           await loadCatalog();
           await loadSelectedPlanAndWorkout();
           await loadLogs();
+          await updatePendingCount();
+
+          // Sincronizzazione automatica iniziale se connessi
+          if (navigator.onLine && webhookUrl.value) {
+            syncWithCloud({ silent: true });
+          }
+
+          // Listener connessione di rete
+          window.addEventListener('online', () => {
+            isOnline.value = true;
+            if (webhookUrl.value) syncWithCloud({ silent: true });
+          });
+          window.addEventListener('offline', () => {
+            isOnline.value = false;
+          });
+
+          // Listener cambio visibilità (es. ritorno all'app da background)
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && navigator.onLine && webhookUrl.value) {
+              syncWithCloud({ silent: true });
+            }
+          });
 
           // Global paste event listener per incollare screenshot direttamente negli appunti
           window.addEventListener('paste', async (e) => {
@@ -1134,23 +1317,24 @@
         async function seedDefaultExercises() {
           const count = await db.exercises.count();
           if (count === 0) {
+            const now = new Date().toISOString();
             await db.exercises.bulkAdd([
-              { name: "Panca piana", category: "main" },
-              { name: "Squat", category: "main" },
-              { name: "Stacco da terra", category: "main" },
-              { name: "Panca board", category: "variant" },
-              { name: "Squat fermo 2\"", category: "variant" },
-              { name: "Pin Squat", category: "variant" },
-              { name: "Panca fermo 3\"", category: "variant" },
-              { name: "Panca presa stretta", category: "variant" },
-              { name: "Stacco al ginocchio", category: "variant" },
-              { name: "Deficit Deadlift", category: "variant" },
-              { name: "Lat machine presa prona", category: "accessory" },
-              { name: "Rematore con manubri", category: "accessory" },
-              { name: "Bicipiti con Bilanciere EZ", category: "accessory" },
-              { name: "Trazioni zavorrate", category: "accessory" },
-              { name: "Dip parallele", category: "accessory" },
-              { name: "Military Press", category: "accessory" }
+              { id: generateUUID(), name: "Panca piana", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Squat", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Stacco da terra", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca board", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Squat fermo 2\"", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Pin Squat", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca fermo 3\"", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca presa stretta", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Stacco al ginocchio", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Deficit Deadlift", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Lat machine presa prona", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Rematore con manubri", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Bicipiti con Bilanciere EZ", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Trazioni zavorrate", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Dip parallele", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Military Press", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true }
             ]);
           }
         }
@@ -1158,7 +1342,9 @@
         async function seedDefaultPlanIfEmpty() {
           const count = await db.templates.count();
           if (count === 0) {
+            const now = new Date().toISOString();
             await db.templates.put({
+              id: "p1_w1_sA",
               program: 1,
               week: 1,
               session: 'A',
@@ -1168,47 +1354,69 @@
                 { exerciseName: "Lat machine presa prona", category: "accessory", target: "10,8,6,6 x 1", rest: "2'", notes: "Tecnica piramidale" },
                 { exerciseName: "Rematore con manubri", category: "accessory", target: "8 x 3", rest: "2'", notes: "Fermo 2 sec picco tirata" },
                 { exerciseName: "Bicipiti con Bilanciere EZ", category: "accessory", target: "3 e 3 x 4 (10 RM)", rest: "2'", notes: "3 reps isometria 3s + 3 reps norm" }
-              ]
+              ],
+              updatedAt: now,
+              isDeleted: false,
+              _dirty: true
             });
           }
         }
 
         async function loadCatalog() {
-          exercises.value = await db.exercises.toArray();
+          const list = await db.exercises.toArray();
+          exercises.value = list.filter(e => !e.isDeleted);
         }
 
         async function loadSelectedPlanAndWorkout() {
-          const plan = await db.templates.get([
-            selectedProgram.value,
-            selectedWeek.value,
-            selectedSession.value
-          ]);
+          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+          const plan = await db.templates.get(tId);
 
-          if (plan) {
+          if (plan && !plan.isDeleted) {
+            currentPlan.id = plan.id;
             currentPlan.program = plan.program;
             currentPlan.week = plan.week;
             currentPlan.session = plan.session;
-            currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises));
+            currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises || []));
           } else {
+            currentPlan.id = tId;
             currentPlan.program = selectedProgram.value;
             currentPlan.week = selectedWeek.value;
             currentPlan.session = selectedSession.value;
             currentPlan.exercises = [];
           }
 
-          currentWorkout.program = selectedProgram.value;
-          currentWorkout.week = selectedWeek.value;
-          currentWorkout.session = selectedSession.value;
-          currentWorkout.isRepeated = false;
-          
-          currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
-            exerciseName: item.exerciseName,
-            category: item.category,
-            targetReference: item.target,
-            sets: [
-              { setNum: 1, weight: null, reps: null, rest: '', rpe: '', notes: item.notes || '' }
-            ]
-          }));
+          // Cerca se esiste già un log registrato per questa specifica data e sessione
+          const allLogs = await db.workoutLogs.toArray();
+          const existingLog = allLogs.find(l => 
+            !l.isDeleted &&
+            l.date === currentWorkout.date && 
+            l.program === selectedProgram.value && 
+            l.week === selectedWeek.value && 
+            l.session === selectedSession.value
+          );
+
+          if (existingLog) {
+            currentWorkout.id = existingLog.id;
+            currentWorkout.program = existingLog.program;
+            currentWorkout.week = existingLog.week;
+            currentWorkout.session = existingLog.session;
+            currentWorkout.isRepeated = !!existingLog.isRepeated;
+            currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
+          } else {
+            currentWorkout.id = generateUUID();
+            currentWorkout.program = selectedProgram.value;
+            currentWorkout.week = selectedWeek.value;
+            currentWorkout.session = selectedSession.value;
+            currentWorkout.isRepeated = false;
+            currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+              exerciseName: item.exerciseName,
+              category: item.category,
+              targetReference: item.target,
+              sets: [
+                { setNum: 1, weight: null, reps: null, rest: '', rpe: '', notes: item.notes || '' }
+              ]
+            }));
+          }
         }
 
         async function onFilterChange() {
@@ -1265,6 +1473,7 @@
           const records = [];
 
           for (const log of workoutLogs.value) {
+            if (log.isDeleted) continue;
             const matches = (log.performedExercises || []).filter(ex => 
               String(ex.exerciseName || '').toLowerCase() === name
             );
@@ -1319,44 +1528,28 @@
         }
 
         async function saveWorkoutSession() {
+          const now = new Date().toISOString();
+          const logId = currentWorkout.id || generateUUID();
+          currentWorkout.id = logId;
+
           const logData = {
+            id: logId,
             date: currentWorkout.date,
             program: selectedProgram.value,
             week: selectedWeek.value,
             session: selectedSession.value,
             isRepeated: !!currentWorkout.isRepeated,
             performedExercises: JSON.parse(JSON.stringify(currentWorkout.performedExercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true,
             synced: false
           };
 
-          const allLogs = await db.workoutLogs.toArray();
-          const existingLog = allLogs.find(l => 
-            l.date === logData.date && 
-            l.program === logData.program && 
-            l.week === logData.week && 
-            l.session === logData.session
-          );
-
-          let id;
-          if (existingLog) {
-            id = existingLog.id;
-            logData.id = id;
-            await db.workoutLogs.put(logData);
-            showToast('Allenamento aggiornato e sovrascritto!');
-          } else {
-            id = await db.workoutLogs.add(logData);
-            showToast('Allenamento salvato in locale!');
-          }
-
-          if (webhookUrl.value) {
-            try {
-              await performCloudSync(id, logData);
-            } catch (e) {
-              console.warn('Sync fallita: salvato offline', e);
-            }
-          }
-
+          await db.workoutLogs.put(logData);
+          showToast('Allenamento salvato in locale!');
           await loadLogs();
+          triggerDebouncedSync(500);
         }
 
         function addExerciseToPlanFromSelect(event) {
@@ -1401,26 +1594,31 @@
         }
 
         async function savePlan() {
+          const now = new Date().toISOString();
+          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+          
           await db.templates.put({
+            id: tId,
             program: selectedProgram.value,
             week: selectedWeek.value,
             session: selectedSession.value,
-            exercises: JSON.parse(JSON.stringify(currentPlan.exercises))
+            exercises: JSON.parse(JSON.stringify(currentPlan.exercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true
           });
 
           showToast(`Scheda Giorno ${selectedSession.value} aggiornata!`);
           await loadSelectedPlanAndWorkout();
+          triggerDebouncedSync(1000);
         }
 
         async function copyFromPreviousWeek() {
           if (selectedWeek.value <= 1) return;
-          const prevPlan = await db.templates.get([
-            selectedProgram.value,
-            selectedWeek.value - 1,
-            selectedSession.value
-          ]);
+          const prevId = `p${selectedProgram.value}_w${selectedWeek.value - 1}_s${selectedSession.value}`;
+          const prevPlan = await db.templates.get(prevId);
 
-          if (prevPlan && prevPlan.exercises.length > 0) {
+          if (prevPlan && !prevPlan.isDeleted && prevPlan.exercises && prevPlan.exercises.length > 0) {
             currentPlan.exercises = JSON.parse(JSON.stringify(prevPlan.exercises));
             await savePlan();
             showToast(`Copiati esercizi da Settimana ${selectedWeek.value - 1}!`);
@@ -1431,18 +1629,34 @@
 
         async function addNewExerciseToCatalog() {
           if (!newExercise.name.trim()) return;
-          await db.exercises.add({
+          const now = new Date().toISOString();
+          await db.exercises.put({
+            id: generateUUID(),
             name: newExercise.name.trim(),
-            category: newExercise.category
+            category: newExercise.category,
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true
           });
           newExercise.name = '';
           await loadCatalog();
           showToast('Nuovo esercizio inserito in catalogo!');
+          triggerDebouncedSync(1000);
         }
 
         async function deleteExerciseFromCatalog(id) {
-          await db.exercises.delete(id);
-          await loadCatalog();
+          const ex = await db.exercises.get(id);
+          if (ex) {
+            await db.exercises.put({
+              ...ex,
+              isDeleted: true,
+              updatedAt: new Date().toISOString(),
+              _dirty: true
+            });
+            await loadCatalog();
+            showToast('Esercizio rimosso dal catalogo');
+            triggerDebouncedSync(500);
+          }
         }
 
         function requestDeleteExerciseFromCatalog(id, exName) {
@@ -1454,12 +1668,18 @@
         }
 
         async function loadLogs() {
-          workoutLogs.value = await db.workoutLogs.toArray();
+          const list = await db.workoutLogs.toArray();
+          workoutLogs.value = list.filter(l => !l.isDeleted).sort((a, b) => {
+            return String(b.date).localeCompare(String(a.date));
+          });
         }
 
         function saveWebhookUrl() {
-          localStorage.setItem('pl_webhook_url', webhookUrl.value);
+          localStorage.setItem('pl_webhook_url', webhookUrl.value.trim());
           showToast('Webhook Google Apps Script salvato!');
+          if (webhookUrl.value.trim()) {
+            syncWithCloud({ silent: false });
+          }
         }
 
         function saveGeminiApiKey() {
@@ -1467,32 +1687,199 @@
           showToast('API Key salvata!');
         }
 
-        async function performCloudSync(localId, logData) {
-          if (!webhookUrl.value) return;
-          const res = await fetch(webhookUrl.value, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(logData)
-          });
-
-          if (res.ok) {
-            await db.workoutLogs.update(localId, { synced: true });
-            showToast('Sincronizzato con Google Sheets!');
-            await loadLogs();
+        // =========================================================
+        // MOTORE DI SINCRONIZZAZIONE A 2 VIE (OFFLINE-FIRST DELTA)
+        // =========================================================
+        async function syncWithCloud({ silent = false } = {}) {
+          if (!webhookUrl.value) {
+            if (!silent) showToast('Configura prima l\'URL del Webhook!');
+            return;
           }
+          if (!navigator.onLine) {
+            if (!silent) showToast('Dispositivo offline: i dati restano al sicuro in locale.');
+            return;
+          }
+          if (isSyncingCloud.value) return;
+
+          isSyncingCloud.value = true;
+          if (!silent) showToast('Sincronizzazione in corso...');
+
+          try {
+            const allExercises = await db.exercises.toArray();
+            const allTemplates = await db.templates.toArray();
+            const allWorkoutLogs = await db.workoutLogs.toArray();
+
+            // Record locali che hanno modifiche o sono stati cancellati
+            const dirtyExercises = allExercises.filter(e => e._dirty || e.isDeleted);
+            const dirtyTemplates = allTemplates.filter(t => t._dirty || t.isDeleted);
+            const dirtyLogs = allWorkoutLogs.filter(l => l._dirty || l.isDeleted);
+
+            const payload = {
+              action: "sync",
+              lastSyncTimestamp: lastSyncTime.value || null,
+              exercises: dirtyExercises,
+              templates: dirtyTemplates,
+              workoutLogs: dirtyLogs,
+              userSettings: {
+                bodyWeight: userBodyWeight.value || ""
+              }
+            };
+
+            const res = await fetch(webhookUrl.value, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              throw new Error('Risposta HTTP del server non valida.');
+            }
+
+            const result = await res.json();
+            if (result.status === 'success' && result.data) {
+              const data = result.data;
+
+              // 1. Applica Esercizi dal server
+              if (Array.isArray(data.exercises)) {
+                for (const ex of data.exercises) {
+                  if (ex.isDeleted) {
+                    await db.exercises.delete(ex.id);
+                  } else {
+                    await db.exercises.put({
+                      id: ex.id,
+                      name: ex.name,
+                      category: ex.category,
+                      updatedAt: ex.updatedAt,
+                      isDeleted: false,
+                      _dirty: false
+                    });
+                  }
+                }
+              }
+              // Rimuovi flag dirty dagli esercizi inviati
+              for (const dex of dirtyExercises) {
+                if (dex.isDeleted) {
+                  await db.exercises.delete(dex.id);
+                } else {
+                  await db.exercises.update(dex.id, { _dirty: false });
+                }
+              }
+
+              // 2. Applica Schede (Templates) dal server
+              if (Array.isArray(data.templates)) {
+                for (const t of data.templates) {
+                  if (t.isDeleted) {
+                    await db.templates.delete(t.id);
+                  } else {
+                    await db.templates.put({
+                      id: t.id,
+                      program: t.program,
+                      week: t.week,
+                      session: t.session,
+                      exercises: t.exercises || [],
+                      updatedAt: t.updatedAt,
+                      isDeleted: false,
+                      _dirty: false
+                    });
+                  }
+                }
+              }
+              for (const dt of dirtyTemplates) {
+                if (dt.isDeleted) {
+                  await db.templates.delete(dt.id);
+                } else {
+                  await db.templates.update(dt.id, { _dirty: false });
+                }
+              }
+
+              // 3. Applica Workout Logs dal server
+              if (Array.isArray(data.workoutLogs)) {
+                for (const log of data.workoutLogs) {
+                  if (log.isDeleted) {
+                    await db.workoutLogs.delete(log.id);
+                  } else {
+                    await db.workoutLogs.put({
+                      id: log.id,
+                      date: log.date,
+                      program: log.program,
+                      week: log.week,
+                      session: log.session,
+                      isRepeated: log.isRepeated,
+                      performedExercises: log.performedExercises || [],
+                      updatedAt: log.updatedAt,
+                      isDeleted: false,
+                      _dirty: false,
+                      synced: true
+                    });
+                  }
+                }
+              }
+              for (const dl of dirtyLogs) {
+                if (dl.isDeleted) {
+                  await db.workoutLogs.delete(dl.id);
+                } else {
+                  await db.workoutLogs.update(dl.id, { _dirty: false, synced: true });
+                }
+              }
+
+              // 4. Applica Impostazioni
+              if (data.userSettings && data.userSettings.bodyWeight !== undefined) {
+                if (data.userSettings.bodyWeight) {
+                  userBodyWeight.value = data.userSettings.bodyWeight;
+                  activeBodyWeight.value = parseFloat(data.userSettings.bodyWeight);
+                  localStorage.setItem('pl_body_weight', String(data.userSettings.bodyWeight));
+                }
+              }
+
+              // Aggiorna Timestamp di Sincronizzazione
+              if (result.serverTime) {
+                lastSyncTime.value = result.serverTime;
+                localStorage.setItem('pl_last_sync_time', result.serverTime);
+              }
+
+              await loadCatalog();
+              await loadSelectedPlanAndWorkout();
+              await loadLogs();
+              await updatePendingCount();
+
+              if (!silent) {
+                showToast('Sincronizzazione 2-Way completata!');
+              }
+            } else {
+              throw new Error(result.message || 'Dati non validi.');
+            }
+          } catch (err) {
+            console.error('Errore durante la sincronizzazione:', err);
+            if (!silent) {
+              showToast('Errore durante la sincronizzazione Cloud.');
+            }
+          } finally {
+            isSyncingCloud.value = false;
+            await updatePendingCount();
+          }
+        }
+
+        function triggerManualSync() {
+          syncWithCloud({ silent: false });
         }
 
         async function syncLog(log) {
-          if (!webhookUrl.value) {
-            showToast('Configura prima l\'URL del Webhook!');
-            return;
-          }
-          await performCloudSync(log.id, log);
+          syncWithCloud({ silent: false });
         }
 
         async function deleteLog(id) {
-          await db.workoutLogs.delete(id);
-          await loadLogs();
+          const log = await db.workoutLogs.get(id);
+          if (log) {
+            await db.workoutLogs.put({
+              ...log,
+              isDeleted: true,
+              updatedAt: new Date().toISOString(),
+              _dirty: true
+            });
+            await loadLogs();
+            showToast('Allenamento eliminato');
+            triggerDebouncedSync(500);
+          }
         }
 
         function requestDeleteLog(id, date) {
@@ -1517,149 +1904,6 @@
           document.execCommand('copy');
           document.body.removeChild(textarea);
           showToast('JSON copiato negli appunti!');
-        }
-
-        async function uploadFullDatabase() {
-          if (!webhookUrl.value) {
-            showToast('Configura prima l\'URL del Webhook!');
-            return;
-          }
-          isSyncingCloud.value = true;
-          showToast('Preparazione backup del database...');
-          try {
-            const allExercises = await db.exercises.toArray();
-            const allTemplates = await db.templates.toArray();
-            const allWorkoutLogs = await db.workoutLogs.toArray();
-
-            const payload = {
-              action: "upload",
-              exercises: allExercises,
-              templates: allTemplates,
-              workoutLogs: allWorkoutLogs,
-              userSettings: {
-                bodyWeight: userBodyWeight.value || ""
-              }
-            };
-
-            const res = await fetch(webhookUrl.value, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-              // Aggiorna lo stato di sync locale
-              for (const log of allWorkoutLogs) {
-                if (!log.synced) {
-                  await db.workoutLogs.update(log.id, { synced: true });
-                }
-              }
-              await loadLogs();
-              showToast('Database caricato sul Cloud con successo!');
-            } else {
-              throw new Error('Caricamento fallito.');
-            }
-          } catch (err) {
-            console.error('Errore backup database:', err);
-            showToast('Errore durante il caricamento del database.');
-          } finally {
-            isSyncingCloud.value = false;
-          }
-        }
-
-        async function performDownloadFullDatabase() {
-          isSyncingCloud.value = true;
-          showToast('Download in corso dal Cloud...');
-          try {
-            const payload = { action: "download" };
-            const res = await fetch(webhookUrl.value, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-              throw new Error('Scaricamento fallito dal server.');
-            }
-
-            const result = await res.json();
-            if (result.status === 'success' && result.data) {
-              const data = result.data;
-
-              // 1. Ripristina Esercizi
-              await db.exercises.clear();
-              if (Array.isArray(data.exercises) && data.exercises.length > 0) {
-                const cleanExercises = data.exercises.map(e => {
-                  const copy = { ...e };
-                  if (copy.id === null || copy.id === undefined || isNaN(copy.id) || copy.id === "") {
-                    delete copy.id;
-                  }
-                  return copy;
-                });
-                await db.exercises.bulkAdd(cleanExercises);
-              }
-
-              // 2. Ripristina Schede (Templates)
-              await db.templates.clear();
-              if (Array.isArray(data.templates) && data.templates.length > 0) {
-                const cleanTemplates = data.templates.filter(t => 
-                  t.program !== null && t.program !== undefined && !isNaN(t.program) &&
-                  t.week !== null && t.week !== undefined && !isNaN(t.week) &&
-                  t.session
-                );
-                await db.templates.bulkAdd(cleanTemplates);
-              }
-
-              // 3. Ripristina Workout Logs
-              await db.workoutLogs.clear();
-              if (Array.isArray(data.workoutLogs) && data.workoutLogs.length > 0) {
-                const cleanLogs = data.workoutLogs.map(l => {
-                  const copy = { ...l };
-                  if (copy.id === null || copy.id === undefined || isNaN(copy.id) || copy.id === "") {
-                    delete copy.id;
-                  }
-                  return copy;
-                });
-                await db.workoutLogs.bulkAdd(cleanLogs);
-              }
-
-              // 4. Ripristina Impostazioni
-              if (data.userSettings && data.userSettings.bodyWeight !== undefined) {
-                userBodyWeight.value = data.userSettings.bodyWeight;
-                if (data.userSettings.bodyWeight) {
-                  activeBodyWeight.value = parseFloat(data.userSettings.bodyWeight);
-                  localStorage.setItem('pl_body_weight', String(data.userSettings.bodyWeight));
-                } else {
-                  activeBodyWeight.value = null;
-                  localStorage.removeItem('pl_body_weight');
-                }
-              }
-
-              await loadCatalog();
-              await loadSelectedPlanAndWorkout();
-              await loadLogs();
-              showToast('Database ripristinato dal Cloud!');
-            } else {
-              throw new Error(result.message || 'Dati del server non validi.');
-            }
-          } catch (err) {
-            console.error('Errore ripristino database:', err);
-            showToast('Errore durante il download del database.');
-          } finally {
-            isSyncingCloud.value = false;
-          }
-        }
-
-        function downloadFullDatabase() {
-          if (!webhookUrl.value) {
-            showToast('Configura prima l\'URL del Webhook!');
-            return;
-          }
-          askConfirm(
-            'Ripristina dal Cloud',
-            'Attenzione: questa operazione sovrascriverà TUTTI i dati locali di questo dispositivo (schede, catalogo, allenamenti) con quelli presenti su Google Sheets. Vuoi procedere?',
-            async () => { await performDownloadFullDatabase(); }
-          );
         }
 
         async function processImageFile(file) {
@@ -1740,12 +1984,17 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
             const parsedExercises = JSON.parse(cleanJsonText);
 
             if (Array.isArray(parsedExercises) && parsedExercises.length > 0) {
+              const now = new Date().toISOString();
               for (const item of parsedExercises) {
                 const exists = exercises.value.some(e => e.name.toLowerCase() === item.exerciseName.toLowerCase());
                 if (!exists && item.exerciseName) {
-                  await db.exercises.add({
+                  await db.exercises.put({
+                    id: generateUUID(),
                     name: item.exerciseName,
-                    category: item.category || 'accessory'
+                    category: item.category || 'accessory',
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
                   });
                 }
               }
@@ -1881,8 +2130,14 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           geminiApiKey,
           saveGeminiApiKey,
           isSyncingCloud,
-          uploadFullDatabase,
-          downloadFullDatabase,
+          isOnline,
+          lastSyncTimeFormatted,
+          pendingChangesCount,
+          syncStatusLabel,
+          syncStatusDotClass,
+          syncStatusTextClass,
+          syncStatusBadgeClass,
+          triggerManualSync,
           userBodyWeight,
           levelTable,
           calculateLevels,

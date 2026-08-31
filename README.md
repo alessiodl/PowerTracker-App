@@ -52,9 +52,14 @@ L'importazione tramite immagine e appunti si appoggia al modello Gemini 3.6 Flas
 3. Apri l'applicazione, accedi alla scheda "SYNC & STORICO" ed inserisci la chiave nel campo "API Key per funzionalità AI".
 4. Fai clic su "Salva API Key". La chiave verrà salvata localmente nel browser (localStorage).
 
-## Sincronizzazione con Google Sheets (Database Centralizzato)
+## Sincronizzazione con Google Sheets (2-Way Sync & Unica Fonte di Verità)
 
-Per salvare e sincronizzare tutti i dati (schede target, catalogo esercizi, storico allenamenti e peso corporeo) su Google Sheets:
+L'applicazione utilizza un'architettura **Offline-First bidirezionale**:
+* I dati vengono salvati istantaneamente in locale su IndexedDB con identificativi globali unici (UUID) e timestamp di modifica (`updatedAt`).
+* La sincronizzazione a 2 vie avviene **automaticamente** all'avvio dell'app, al ritorno della connessione internet o dopo ogni salvataggio.
+* Un **unico pulsante "Sincronizza Ora"** permette di sincronizzare manualmente in qualsiasi momento senza rischio di sovrascritture o perdite di dati (risoluzione dei conflitti automatica con logica *Last-Write-Wins*).
+
+### Configurazione di Google Apps Script
 
 1. Crea un nuovo Foglio Google.
 2. Fai clic su "Estensioni" nel menu superiore e seleziona "Apps Script".
@@ -62,165 +67,293 @@ Per salvare e sincronizzare tutti i dati (schede target, catalogo esercizi, stor
 
 ```javascript
 function doPost(e) {
+  var lock = LockService.getScriptLock();
   try {
-    var payload = JSON.parse(e.postData.contents);
-    var action = payload.action;
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    // Lock per prevenire scritture concorrenti contemporanee
+    lock.waitLock(15000);
     
-    if (action === "upload") {
-      // 1. Scrivi Catalogo Esercizi
-      var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
-      sheetCat.clear();
-      sheetCat.appendRow(["ID", "Nome", "Categoria"]);
-      sheetCat.getRange(1, 1, 1, 3).setFontWeight("bold");
-      var exercises = payload.exercises || [];
-      for (var i = 0; i < exercises.length; i++) {
-        sheetCat.appendRow([exercises[i].id || "", exercises[i].name || "", exercises[i].category || ""]);
+    var payload = JSON.parse(e.postData.contents);
+    var action = payload.action || "sync";
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var serverTime = new Date().toISOString();
+
+    // Inizializzazione fogli se non esistono
+    var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
+    var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
+    var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
+    var sheetSet = ss.getSheetByName("Impostazioni") || ss.insertSheet("Impostazioni");
+
+    if (sheetCat.getLastRow() === 0) {
+      sheetCat.appendRow(["ID", "Nome", "Categoria", "DataAggiornamento", "Eliminato"]);
+      sheetCat.getRange(1, 1, 1, 5).setFontWeight("bold");
+    }
+    if (sheetSch.getLastRow() === 0) {
+      sheetSch.appendRow(["ID_Scheda", "Programma", "Settimana", "Seduta", "Esercizio", "Categoria", "Target", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
+      sheetSch.getRange(1, 1, 1, 11).setFontWeight("bold");
+    }
+    if (sheetAll.getLastRow() === 0) {
+      sheetAll.appendRow(["ID_Allenamento", "Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso", "Reps", "RPE", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
+      sheetAll.getRange(1, 1, 1, 17).setFontWeight("bold");
+    }
+    if (sheetSet.getLastRow() === 0) {
+      sheetSet.appendRow(["Chiave", "Valore", "DataAggiornamento"]);
+      sheetSet.getRange(1, 1, 1, 3).setFontWeight("bold");
+    }
+
+    if (action === "sync") {
+      var lastSyncTime = payload.lastSyncTimestamp ? new Date(payload.lastSyncTimestamp).getTime() : 0;
+
+      // ==========================================
+      // 1. PUSH & MERGE: CATALOGO ESERCIZI
+      // ==========================================
+      var clientExercises = payload.exercises || [];
+      var catData = sheetCat.getLastRow() > 1 ? sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues() : [];
+      var catRowMap = {};
+      for (var i = 0; i < catData.length; i++) {
+        var rowId = String(catData[i][0]);
+        if (rowId) catRowMap[rowId] = { rowIndex: i + 2, data: catData[i] };
       }
-      
-      // 2. Scrivi Schede Target (Templates)
-      var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
-      sheetSch.clear();
-      sheetSch.appendRow(["Programma", "Settimana", "Seduta", "Esercizio", "Categoria", "Target", "Recupero", "Note"]);
-      sheetSch.getRange(1, 1, 1, 8).setFontWeight("bold");
-      var templates = payload.templates || [];
-      for (var i = 0; i < templates.length; i++) {
-        var t = templates[i];
-        var tExs = t.exercises || [];
-        for (var j = 0; j < tExs.length; j++) {
-          sheetSch.appendRow([
-            t.program,
-            t.week,
-            t.session,
-            tExs[j].exerciseName || "",
-            tExs[j].category || "",
-            tExs[j].target || "",
-            tExs[j].rest || "",
-            tExs[j].notes || ""
-          ]);
+
+      for (var j = 0; j < clientExercises.length; j++) {
+        var ex = clientExercises[j];
+        var exId = String(ex.id);
+        var exUpdated = ex.updatedAt ? new Date(ex.updatedAt).getTime() : new Date().getTime();
+        var exDeleted = ex.isDeleted ? "Sì" : "No";
+
+        if (catRowMap[exId]) {
+          var existingUpdated = catRowMap[exId].data[3] ? new Date(catRowMap[exId].data[3]).getTime() : 0;
+          if (exUpdated >= existingUpdated) {
+            sheetCat.getRange(catRowMap[exId].rowIndex, 1, 1, 5).setValues([[
+              exId, ex.name || "", ex.category || "accessory", ex.updatedAt || serverTime, exDeleted
+            ]]);
+          }
+        } else {
+          sheetCat.appendRow([exId, ex.name || "", ex.category || "accessory", ex.updatedAt || serverTime, exDeleted]);
         }
       }
-      
-      // 3. Scrivi Allenamenti Eseguiti (Logs)
-      var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
-      sheetAll.clear();
-      sheetAll.appendRow([
-        "ID_Allenamento", "Data", "Programma", "Settimana", "Seduta", "Ripetuto",
-        "Esercizio", "Categoria", "Target", "Set", "Peso", "Reps", "RPE", "Recupero", "Note"
-      ]);
-      sheetAll.getRange(1, 1, 1, 15).setFontWeight("bold");
-      var logs = payload.workoutLogs || [];
-      for (var i = 0; i < logs.length; i++) {
-        var log = logs[i];
-        var pExs = log.performedExercises || [];
-        var isRep = log.isRepeated ? "Sì" : "No";
-        for (var j = 0; j < pExs.length; j++) {
-          var ex = pExs[j];
-          var sets = ex.sets || [];
-          for (var k = 0; k < sets.length; k++) {
-            var set = sets[k];
-            sheetAll.appendRow([
-              log.id || "",
-              log.date || "",
-              log.program || "",
-              log.week || "",
-              log.session || "",
-              isRep,
-              ex.exerciseName || "",
-              ex.category || "",
-              ex.targetReference || "",
-              set.setNum || (k + 1),
-              set.weight !== null ? set.weight : "",
-              set.reps !== null ? set.reps : "",
-              set.rpe || "",
-              set.rest || "",
-              set.notes || ""
-            ]);
+
+      // ==========================================
+      // 2. PUSH & MERGE: SCHEDE TARGET (TEMPLATES)
+      // ==========================================
+      var clientTemplates = payload.templates || [];
+      var schData = sheetSch.getLastRow() > 1 ? sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues() : [];
+      var schIdRows = {}; // ID_Scheda -> [rowIndexes]
+      for (var i = 0; i < schData.length; i++) {
+        var tId = String(schData[i][0]);
+        if (tId) {
+          if (!schIdRows[tId]) schIdRows[tId] = [];
+          schIdRows[tId].push({ rowIndex: i + 2, data: schData[i] });
+        }
+      }
+
+      for (var j = 0; j < clientTemplates.length; j++) {
+        var t = clientTemplates[j];
+        var tId = String(t.id || ("p" + t.program + "_w" + t.week + "_s" + t.session));
+        var tUpdated = t.updatedAt ? new Date(t.updatedAt).getTime() : new Date().getTime();
+        var tDeleted = t.isDeleted ? "Sì" : "No";
+        var tExs = t.exercises || [];
+
+        // Rimuovi eventuali righe precedenti per questo ID_Scheda prima di riscriverle
+        if (schIdRows[tId] && schIdRows[tId].length > 0) {
+          var existingUpdated = schIdRows[tId][0].data[9] ? new Date(schIdRows[tId][0].data[9]).getTime() : 0;
+          if (tUpdated >= existingUpdated) {
+            // Elimina righe dal basso verso l'alto
+            var indicesToDelete = schIdRows[tId].map(function(r) { return r.rowIndex; }).sort(function(a,b){ return b - a; });
+            for (var k = 0; k < indicesToDelete.length; k++) {
+              sheetSch.deleteRow(indicesToDelete[k]);
+            }
+            // Scrivi le nuove righe
+            if (!t.isDeleted && tExs.length > 0) {
+              for (var k = 0; k < tExs.length; k++) {
+                sheetSch.appendRow([
+                  tId, t.program, t.week, t.session,
+                  tExs[k].exerciseName || "", tExs[k].category || "", tExs[k].target || "", tExs[k].rest || "", tExs[k].notes || "",
+                  t.updatedAt || serverTime, tDeleted
+                ]);
+              }
+            } else if (t.isDeleted) {
+              sheetSch.appendRow([tId, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt || serverTime, "Sì"]);
+            }
+          }
+        } else {
+          if (!t.isDeleted && tExs.length > 0) {
+            for (var k = 0; k < tExs.length; k++) {
+              sheetSch.appendRow([
+                tId, t.program, t.week, t.session,
+                tExs[k].exerciseName || "", tExs[k].category || "", tExs[k].target || "", tExs[k].rest || "", tExs[k].notes || "",
+                t.updatedAt || serverTime, tDeleted
+              ]);
+            }
+          } else if (t.isDeleted) {
+            sheetSch.appendRow([tId, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt || serverTime, "Sì"]);
           }
         }
       }
-      
-      // 4. Scrivi Impostazioni (Peso corporeo)
-      var sheetSet = ss.getSheetByName("Impostazioni") || ss.insertSheet("Impostazioni");
-      sheetSet.clear();
-      sheetSet.appendRow(["Chiave", "Valore"]);
-      sheetSet.getRange(1, 1, 1, 2).setFontWeight("bold");
-      if (payload.userSettings) {
-        sheetSet.appendRow(["bodyWeight", payload.userSettings.bodyWeight || ""]);
+
+      // ==========================================
+      // 3. PUSH & MERGE: ALLENAMENTI (WORKOUT LOGS)
+      // ==========================================
+      var clientLogs = payload.workoutLogs || [];
+      var allData = sheetAll.getLastRow() > 1 ? sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues() : [];
+      var allIdRows = {}; // ID_Allenamento -> [rowIndexes]
+      for (var i = 0; i < allData.length; i++) {
+        var lId = String(allData[i][0]);
+        if (lId) {
+          if (!allIdRows[lId]) allIdRows[lId] = [];
+          allIdRows[lId].push({ rowIndex: i + 2, data: allData[i] });
+        }
       }
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Database caricato con successo!" }))
-        .setMimeType(ContentService.MimeType.JSON);
-        
-    } else if (action === "download") {
-      // 1. Leggi Catalogo Esercizi
-      var sheetCat = ss.getSheetByName("Catalogo");
-      var exercises = [];
-      if (sheetCat && sheetCat.getLastRow() > 1) {
-        var rows = sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 3).getValues();
+
+      for (var j = 0; j < clientLogs.length; j++) {
+        var log = clientLogs[j];
+        var logId = String(log.id);
+        var logUpdated = log.updatedAt ? new Date(log.updatedAt).getTime() : new Date().getTime();
+        var logDeleted = log.isDeleted ? "Sì" : "No";
+        var isRep = log.isRepeated ? "Sì" : "No";
+        var pExs = log.performedExercises || [];
+
+        if (allIdRows[logId] && allIdRows[logId].length > 0) {
+          var existingUpdated = allIdRows[logId][0].data[15] ? new Date(allIdRows[logId][0].data[15]).getTime() : 0;
+          if (logUpdated >= existingUpdated) {
+            var indicesToDelete = allIdRows[logId].map(function(r) { return r.rowIndex; }).sort(function(a,b){ return b - a; });
+            for (var k = 0; k < indicesToDelete.length; k++) {
+              sheetAll.deleteRow(indicesToDelete[k]);
+            }
+            if (!log.isDeleted && pExs.length > 0) {
+              for (var k = 0; k < pExs.length; k++) {
+                var ex = pExs[k];
+                var sets = ex.sets || [];
+                for (var s = 0; s < sets.length; s++) {
+                  var set = sets[s];
+                  sheetAll.appendRow([
+                    logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep,
+                    ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                    set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                    set.rpe || "", set.rest || "", set.notes || "",
+                    log.updatedAt || serverTime, logDeleted
+                  ]);
+                }
+              }
+            } else if (log.isDeleted) {
+              sheetAll.appendRow([logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep, "", "", "", "", "", "", "", "", "", log.updatedAt || serverTime, "Sì"]);
+            }
+          }
+        } else {
+          if (!log.isDeleted && pExs.length > 0) {
+            for (var k = 0; k < pExs.length; k++) {
+              var ex = pExs[k];
+              var sets = ex.sets || [];
+              for (var s = 0; s < sets.length; s++) {
+                var set = sets[s];
+                sheetAll.appendRow([
+                  logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep,
+                  ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                  set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                  set.rpe || "", set.rest || "", set.notes || "",
+                  log.updatedAt || serverTime, logDeleted
+                ]);
+              }
+            }
+          } else if (log.isDeleted) {
+            sheetAll.appendRow([logId, log.date || "", log.program || "", log.week || "", log.session || "", isRep, "", "", "", "", "", "", "", "", "", log.updatedAt || serverTime, "Sì"]);
+          }
+        }
+      }
+
+      // ==========================================
+      // 4. PUSH & MERGE: IMPOSTAZIONI
+      // ==========================================
+      if (payload.userSettings) {
+        var setData = sheetSet.getLastRow() > 1 ? sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues() : [];
+        var bwFound = false;
+        for (var i = 0; i < setData.length; i++) {
+          if (setData[i][0] === "bodyWeight") {
+            bwFound = true;
+            sheetSet.getRange(i + 2, 2, 1, 2).setValues([[payload.userSettings.bodyWeight || "", serverTime]]);
+            break;
+          }
+        }
+        if (!bwFound && payload.userSettings.bodyWeight !== undefined) {
+          sheetSet.appendRow(["bodyWeight", payload.userSettings.bodyWeight || "", serverTime]);
+        }
+      }
+
+      // ==========================================
+      // 5. PULL: LETTURA STATO AGGIORNATO (TUTTO O DELTA)
+      // ==========================================
+      var finalExercises = [];
+      if (sheetCat.getLastRow() > 1) {
+        var rows = sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues();
         for (var i = 0; i < rows.length; i++) {
-          exercises.push({
-            id: rows[i][0] ? Number(rows[i][0]) : null,
-            name: rows[i][1],
-            category: rows[i][2]
+          finalExercises.push({
+            id: String(rows[i][0]),
+            name: String(rows[i][1] || ""),
+            category: String(rows[i][2] || "accessory"),
+            updatedAt: rows[i][3] instanceof Date ? rows[i][3].toISOString() : String(rows[i][3] || ""),
+            isDeleted: rows[i][4] === "Sì"
           });
         }
       }
-      
-      // 2. Leggi Schede (Templates)
-      var sheetSch = ss.getSheetByName("Schede");
-      var templatesMap = {};
-      if (sheetSch && sheetSch.getLastRow() > 1) {
-        var rows = sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 8).getValues();
+
+      var finalTemplatesMap = {};
+      if (sheetSch.getLastRow() > 1) {
+        var rows = sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues();
         for (var i = 0; i < rows.length; i++) {
-          var prog = Number(rows[i][0]);
-          var week = Number(rows[i][1]);
-          var sess = rows[i][2];
-          var key = prog + "_" + week + "_" + sess;
-          if (!templatesMap[key]) {
-            templatesMap[key] = {
+          var tId = String(rows[i][0]);
+          var prog = Number(rows[i][1]);
+          var week = Number(rows[i][2]);
+          var sess = String(rows[i][3]);
+          var upTime = rows[i][9] instanceof Date ? rows[i][9].toISOString() : String(rows[i][9] || "");
+          var isDel = rows[i][10] === "Sì";
+
+          if (!finalTemplatesMap[tId]) {
+            finalTemplatesMap[tId] = {
+              id: tId,
               program: prog,
               week: week,
               session: sess,
-              exercises: []
+              exercises: [],
+              updatedAt: upTime,
+              isDeleted: isDel
             };
           }
-          templatesMap[key].exercises.push({
-            exerciseName: rows[i][3],
-            category: rows[i][4],
-            target: rows[i][5],
-            rest: rows[i][6],
-            notes: rows[i][7]
-          });
+          if (rows[i][4]) {
+            finalTemplatesMap[tId].exercises.push({
+              exerciseName: String(rows[i][4]),
+              category: String(rows[i][5] || ""),
+              target: String(rows[i][6] || ""),
+              rest: String(rows[i][7] || ""),
+              notes: String(rows[i][8] || "")
+            });
+          }
         }
       }
-      var templates = Object.keys(templatesMap).map(function(k) { return templatesMap[k]; });
-      
-      // 3. Leggi Allenamenti (Workout Logs)
-      var sheetAll = ss.getSheetByName("Allenamenti");
-      var logsMap = {};
-      if (sheetAll && sheetAll.getLastRow() > 1) {
-        var rows = sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 15).getValues();
+      var finalTemplates = Object.keys(finalTemplatesMap).map(function(k) { return finalTemplatesMap[k]; });
+
+      var finalLogsMap = {};
+      if (sheetAll.getLastRow() > 1) {
+        var rows = sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues();
         for (var i = 0; i < rows.length; i++) {
-          var logId = rows[i][0] ? Number(rows[i][0]) : null;
+          var logId = String(rows[i][0]);
           var date = rows[i][1] instanceof Date ? Utilities.formatDate(rows[i][1], Session.getScriptTimeZone(), "yyyy-MM-dd") : String(rows[i][1]);
           var prog = Number(rows[i][2]);
           var week = Number(rows[i][3]);
-          var sess = rows[i][4];
+          var sess = String(rows[i][4]);
           var isRep = rows[i][5] === "Sì";
-          var exName = rows[i][6];
-          var exCat = rows[i][7];
-          var exTarg = rows[i][8];
-          var setNum = Number(rows[i][9]);
+          var exName = String(rows[i][6] || "");
+          var exCat = String(rows[i][7] || "");
+          var exTarg = String(rows[i][8] || "");
+          var setNum = Number(rows[i][9] || 1);
           var weight = rows[i][10] !== "" ? Number(rows[i][10]) : null;
           var reps = rows[i][11] !== "" ? Number(rows[i][11]) : null;
-          var rpe = String(rows[i][12]);
-          var rest = String(rows[i][13]);
-          var notes = String(rows[i][14]);
-          
-          var key = logId || (date + "_" + prog + "_" + week + "_" + sess);
-          if (!logsMap[key]) {
-            logsMap[key] = {
+          var rpe = String(rows[i][12] || "");
+          var rest = String(rows[i][13] || "");
+          var notes = String(rows[i][14] || "");
+          var upTime = rows[i][15] instanceof Date ? rows[i][15].toISOString() : String(rows[i][15] || "");
+          var isDel = rows[i][16] === "Sì";
+
+          if (!finalLogsMap[logId]) {
+            finalLogsMap[logId] = {
               id: logId,
               date: date,
               program: prog,
@@ -228,88 +361,68 @@ function doPost(e) {
               session: sess,
               isRepeated: isRep,
               performedExercises: [],
+              updatedAt: upTime,
+              isDeleted: isDel,
               synced: true
             };
           }
-          
-          var ex = null;
-          for (var j = 0; j < logsMap[key].performedExercises.length; j++) {
-            if (logsMap[key].performedExercises[j].exerciseName === exName) {
-              ex = logsMap[key].performedExercises[j];
-              break;
+
+          if (exName) {
+            var ex = null;
+            for (var j = 0; j < finalLogsMap[logId].performedExercises.length; j++) {
+              if (finalLogsMap[logId].performedExercises[j].exerciseName === exName) {
+                ex = finalLogsMap[logId].performedExercises[j];
+                break;
+              }
             }
+            if (!ex) {
+              ex = { exerciseName: exName, category: exCat, targetReference: exTarg, sets: [] };
+              finalLogsMap[logId].performedExercises.push(ex);
+            }
+            ex.sets.push({ setNum: setNum, weight: weight, reps: reps, rpe: rpe, rest: rest, notes: notes });
           }
-          if (!ex) {
-            ex = {
-              exerciseName: exName,
-              category: exCat,
-              targetReference: exTarg,
-              sets: []
-            };
-            logsMap[key].performedExercises.push(ex);
-          }
-          
-          ex.sets.push({
-            setNum: setNum,
-            weight: weight,
-            reps: reps,
-            rpe: rpe,
-            rest: rest,
-            notes: notes
-          });
         }
       }
-      
-      var logs = Object.keys(logsMap).map(function(k) {
-        var log = logsMap[k];
-        log.performedExercises.forEach(function(ex) {
-          ex.sets.sort(function(a, b) { return a.setNum - b.setNum; });
-        });
+      var finalLogs = Object.keys(finalLogsMap).map(function(k) {
+        var log = finalLogsMap[k];
+        log.performedExercises.forEach(function(ex) { ex.sets.sort(function(a, b) { return a.setNum - b.setNum; }); });
         return log;
       });
-      
-      // 4. Leggi Impostazioni
-      var sheetSet = ss.getSheetByName("Impostazioni");
-      var userSettings = { bodyWeight: "" };
-      if (sheetSet && sheetSet.getLastRow() > 1) {
-        var rows = sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 2).getValues();
+
+      var finalSettings = { bodyWeight: "" };
+      if (sheetSet.getLastRow() > 1) {
+        var rows = sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues();
         for (var i = 0; i < rows.length; i++) {
-          if (rows[i][0] === "bodyWeight") {
-            userSettings.bodyWeight = rows[i][1];
-          }
+          if (rows[i][0] === "bodyWeight") finalSettings.bodyWeight = rows[i][1];
         }
       }
-      
+
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
+        serverTime: serverTime,
         data: {
-          exercises: exercises,
-          templates: templates,
-          workoutLogs: logs,
-          userSettings: userSettings
+          exercises: finalExercises,
+          templates: finalTemplates,
+          workoutLogs: finalLogs,
+          userSettings: finalSettings
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Azione sconosciuta" }))
       .setMimeType(ContentService.MimeType.JSON);
-      
+
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
 }
 ```
 
 4. Salva il progetto di script.
-5. Clicca su "Nuova distribuzione" in alto a destra.
-6. Seleziona il tipo "Applicazione web" (icona dell'ingranaggio) e configura:
-   * **Esegui come**: Tu (tua email Google)
-   * **Chi ha accesso**: Chiunque
-7. Fai clic su "Distribuisci" ed esegui la procedura di autorizzazione di sicurezza del tuo account.
-8. Copia l'URL dell'applicazione web generato (termina con `/exec`).
-9. Apri l'app PowerTrack, vai nella scheda "SYNC & STORICO", incolla l'URL in "Google Sheets Sync Webhook" e primi "Salva Webhook URL".
+5. Fai clic su **"Esegui distribuzione"** > **"Gestisci distribuzioni"** > Modifica la versione corrente selezionando **"Nuova versione"** e premi **"Distribuisci"** (oppure crea una Nuova distribuzione se è la prima volta).
+6. Copia l'URL dell'applicazione web (termina con `/exec`).
+7. Apri l'app PowerTrack, vai nella scheda "SYNC & STORICO", incolla l'URL in "Google Sheets Sync Webhook" e premi "Salva Webhook URL".
 
-### Istruzioni per la sincronizzazione tra dispositivi
-* **Per salvare i dati nel cloud**: Clicca su **"Invia al Cloud"** (caricherà le tue schede correnti, lo storico degli allenamenti, l'elenco degli esercizi e il peso corporeo su Google Sheets).
-* **Per caricare i dati su un nuovo dispositivo**: Clicca su **"Scarica dal Cloud"** (scaricherà tutto l'archivio da Google Sheets sul database locale del dispositivo corrente, sovrascrivendo i dati locali esistenti).
