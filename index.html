@@ -289,12 +289,23 @@
           </select>
         </div>
 
-        <button 
-          @click="savePlan" 
-          class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99]"
-        >
-          Salva Modifiche Scheda Giorno {{ selectedSession }} (W{{ selectedWeek }})
-        </button>
+        <div class="flex gap-2">
+          <button 
+            v-if="currentPlan.exercises.length > 0"
+            @click="requestClearPlan" 
+            class="px-3.5 py-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center gap-1"
+            title="Svuota tutti gli esercizi della scheda"
+          >
+            <span>🗑️</span>
+            <span>Svuota</span>
+          </button>
+          <button 
+            @click="savePlan" 
+            class="flex-1 py-3 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99]"
+          >
+            Salva Modifiche Scheda Giorno {{ selectedSession }} (W{{ selectedWeek }})
+          </button>
+        </div>
 
       </section>
 
@@ -485,13 +496,24 @@
           </div>
         </div>
 
-        <!-- Main Save Button -->
-        <button 
-          @click="saveWorkoutSession" 
-          class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99]"
-        >
-          Salva Allenamento in Locale / Cloud
-        </button>
+        <!-- Main Save Button Row with Clear Button -->
+        <div class="flex gap-2">
+          <button 
+            v-if="currentWorkout.performedExercises.length > 0"
+            @click="requestClearWorkout" 
+            class="px-3.5 py-3.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center gap-1"
+            title="Svuota tutti gli esercizi dall'allenamento"
+          >
+            <span>🗑️</span>
+            <span>Svuota</span>
+          </button>
+          <button 
+            @click="saveWorkoutSession" 
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99]"
+          >
+            Salva Allenamento in Locale / Cloud
+          </button>
+        </div>
 
       </section>
 
@@ -1465,6 +1487,19 @@
           );
         }
 
+        function clearWorkout() {
+          currentWorkout.performedExercises = [];
+          showToast('Esercizi rimossi dall\'allenamento.');
+        }
+
+        function requestClearWorkout() {
+          askConfirm(
+            'Svuota Allenamento',
+            `Vuoi davvero rimuovere tutti gli esercizi da questo allenamento?`,
+            () => clearWorkout()
+          );
+        }
+
         function getLastE1RM(ex) {
           if (!ex.sets || ex.sets.length === 0) return null;
           const validSet = [...ex.sets].reverse().find(s => s.weight > 0 && s.reps > 0);
@@ -1595,6 +1630,19 @@
             'Rimuovi Esercizio',
             `Vuoi davvero rimuovere "${exName}" dalla scheda del giorno? L'operazione non può essere annullata.`,
             () => removeExerciseFromPlan(idx)
+          );
+        }
+
+        function clearPlan() {
+          currentPlan.exercises = [];
+          showToast('Scheda svuotata. Ricordati di salvare le modifiche!');
+        }
+
+        function requestClearPlan() {
+          askConfirm(
+            'Svuota Scheda Target',
+            `Vuoi davvero rimuovere tutti gli esercizi dalla scheda del Giorno ${selectedSession.value} (W${selectedWeek.value})?`,
+            () => clearPlan()
           );
         }
 
@@ -2100,6 +2148,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           requestRemoveSet,
           removeExerciseFromWorkout,
           requestRemoveExerciseFromWorkout,
+          requestClearWorkout,
           getLastE1RM,
           saveWorkoutSession,
           addExerciseToPlanFromSelect,
@@ -2107,6 +2156,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           moveExerciseInPlan,
           removeExerciseFromPlan,
           requestRemoveExerciseFromPlan,
+          requestClearPlan,
           savePlan,
           handleImageUpload,
           handleClipboardPaste,
