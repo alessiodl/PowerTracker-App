@@ -1349,25 +1349,12 @@
           await loadLogs();
           await updatePendingCount();
 
-          // Sincronizzazione automatica iniziale se connessi
-          if (navigator.onLine && webhookUrl.value) {
-            syncWithCloud({ silent: true });
-          }
-
-          // Listener connessione di rete
+          // Listener stato connessione di rete (solo indicatore visivo UI)
           window.addEventListener('online', () => {
             isOnline.value = true;
-            if (webhookUrl.value) syncWithCloud({ silent: true });
           });
           window.addEventListener('offline', () => {
             isOnline.value = false;
-          });
-
-          // Listener cambio visibilità (es. ritorno all'app da background)
-          document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && navigator.onLine && webhookUrl.value) {
-              syncWithCloud({ silent: true });
-            }
           });
 
           // Global paste event listener per incollare screenshot direttamente negli appunti
@@ -1473,7 +1460,7 @@
 
           await db.workoutLogs.put(logData);
           await loadLogs();
-          triggerDebouncedSync(3000);
+          await updatePendingCount();
         }
 
         function onWorkoutDataInput() {
@@ -1774,12 +1761,14 @@
           };
 
           await db.workoutLogs.put(logData);
-          showToast('✓ Allenamento concluso e salvato!');
           await loadLogs();
-          if (webhookUrl.value) {
+          await updatePendingCount();
+
+          if (webhookUrl.value && navigator.onLine) {
+            showToast('✓ Allenamento salvato! Sincronizzazione Cloud in corso...');
             syncWithCloud({ silent: false });
           } else {
-            triggerDebouncedSync(500);
+            showToast('✓ Allenamento salvato al sicuro in locale sul dispositivo!');
           }
         }
 
