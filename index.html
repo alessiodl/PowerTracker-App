@@ -923,6 +923,17 @@
       </div>
     </div>
 
+    <!-- FULLSCREEN SYNCING BLOCKER MODAL -->
+    <div v-if="isSyncingCloud" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+      <div class="dark:bg-[#1c202c] bg-white p-6 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-4 max-w-xs w-full">
+        <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="space-y-1">
+          <h3 class="font-bold text-sm dark:text-slate-100 text-slate-900 tracking-tight">Sincronizzazione in corso...</h3>
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Attendere qualche secondo</p>
+        </div>
+      </div>
+    </div>
+
     <!-- BOTTOM NAVIGATION BAR -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-2 py-1.5 z-40 transition-colors">
       <div class="grid grid-cols-5 gap-1 text-center">
@@ -1511,35 +1522,51 @@
               currentPlan.exercises = [];
             }
 
-            // La data di default è SEMPRE la data odierna locale
             const todayStr = getTodayDateStr();
             const targetDate = preserveDate && currentWorkout.date ? currentWorkout.date : todayStr;
-            currentWorkout.date = targetDate;
-            currentWorkout.program = selectedProgram.value;
-            currentWorkout.week = selectedWeek.value;
-            currentWorkout.session = selectedSession.value;
 
-            // Cerca se esiste già un log registrato per QUESTA specifica data e seduta
+            // Cerca tutti i log registrati per questa specifica seduta
             const allLogs = await db.workoutLogs.toArray();
-            const existingLog = allLogs.find(l => 
+            const matchingLogs = allLogs.filter(l => 
               !l.isDeleted &&
-              l.date === targetDate &&
               l.program === selectedProgram.value && 
               l.week === selectedWeek.value && 
               l.session === selectedSession.value
-            );
+            ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-            // Controlla se il log esistente contiene almeno 1 set con dati reali
+            // 1. Cerca per data target specifica
+            let existingLog = matchingLogs.find(l => l.date === targetDate);
+            
+            // 2. Se non esiste un log per la data target odierna, prendi l'ultimo log registrato per questa seduta se ha dati reali
+            if (!existingLog && matchingLogs.length > 0 && !preserveDate) {
+              const latestLog = matchingLogs[0];
+              const hasData = (latestLog.performedExercises || []).some(ex => 
+                (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+              );
+              if (hasData) {
+                existingLog = latestLog;
+              }
+            }
+
+            // Controlla se il log trovato contiene dati reali
             const hasRealLogData = existingLog && (existingLog.performedExercises || []).some(ex => 
               (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
             );
 
             if (existingLog && hasRealLogData) {
               currentWorkout.id = existingLog.id;
+              currentWorkout.date = existingLog.date;
+              currentWorkout.program = existingLog.program;
+              currentWorkout.week = existingLog.week;
+              currentWorkout.session = existingLog.session;
               currentWorkout.isRepeated = !!existingLog.isRepeated;
               currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
             } else {
               currentWorkout.id = generateUUID();
+              currentWorkout.date = targetDate;
+              currentWorkout.program = selectedProgram.value;
+              currentWorkout.week = selectedWeek.value;
+              currentWorkout.session = selectedSession.value;
               currentWorkout.isRepeated = false;
               currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
                 exerciseName: item.exerciseName,
@@ -1957,7 +1984,6 @@
           if (isSyncingCloud.value) return;
 
           isSyncingCloud.value = true;
-          if (!silent) showToast('Sincronizzazione 2-Way in corso...');
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -2111,7 +2137,7 @@
               await updatePendingCount();
 
               if (!silent) {
-                showToast('⚡ Sincronizzazione completata con successo!');
+                showToast('✓ Sincronizzazione completata!');
               }
             } else {
               throw new Error(result.message || 'Dati non validi restituiti dal server.');
