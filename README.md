@@ -518,7 +518,7 @@ function doPost(e) {
 3. Apri l'app PowerTrack $\rightarrow$ Tab **`SYNC`** $\rightarrow$ Espandi **"Configurazione e Chiavi"** $\rightarrow$ clicca su **`Modifica`** nel box API Key $\rightarrow$ Incolla la tua chiave (es. `AIzaSy...`) e premi **`Salva`**.
 4. Ora puoi importare all'istante schede e carichi scattando foto o incollando screenshot nella scheda `SCHEDA`.
 
-### ⚠️ Risoluzione problemi IA:
+### Risoluzione problemi IA:
 * **Errore API o Modello non disponibile**: Se Google dovesse aggiornare o dismettere una versione del modello, verifica lo stato della chiave su AI Studio o aggiorna il nome del modello (es. `gemini-2.0-flash`) alla riga `apiUrl` in `index.html`.
 * **Estrazione imprecisa o fallita**: Assicurati che l'immagine sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda usando il pulsante **`Incolla appunti`** (o premendo `Ctrl+V` da PC).
 
