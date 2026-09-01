@@ -347,6 +347,45 @@ function doPost(e) {
         sheetAll.getRange(2, 1, logOutRows.length, 17).setValues(logOutRows);
       }
 
+      // ==========================================
+      // 4. FOGLIO "ANALISI" (SOLO RECORD ATTIVI, ORDINATI PER DATA E PULITI)
+      // ==========================================
+      var sheetAna = ss.getSheetByName("Analisi") || ss.insertSheet("Analisi");
+      sheetAna.clear();
+      sheetAna.appendRow(["Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso (kg)", "Reps", "RPE", "Recupero", "Note"]);
+      sheetAna.getRange(1, 1, 1, 14).setFontWeight("bold");
+
+      var anaRows = [];
+      var activeLogs = logList.filter(function(l) { return !l.isDeleted && l.performedExercises && l.performedExercises.length > 0; });
+      activeLogs.sort(function(a, b) { return String(b.date).localeCompare(String(a.date)); });
+
+      for (var i = 0; i < activeLogs.length; i++) {
+        var l = activeLogs[i];
+        var isRep = l.isRepeated ? "Sì" : "No";
+        for (var j = 0; j < l.performedExercises.length; j++) {
+          var ex = l.performedExercises[j];
+          var sets = ex.sets || [];
+          for (var s = 0; s < sets.length; s++) {
+            var set = sets[s];
+            var hasData = (set.weight !== null && set.weight !== "") || 
+                          (set.reps !== null && set.reps !== "") || 
+                          (set.rpe && String(set.rpe).trim() !== "") || 
+                          (set.notes && String(set.notes).trim() !== "");
+            if (hasData) {
+              anaRows.push([
+                l.date, l.program, l.week, l.session, isRep,
+                ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                set.rpe || "", set.rest || "", set.notes || ""
+              ]);
+            }
+          }
+        }
+      }
+      if (anaRows.length > 0) {
+        sheetAna.getRange(2, 1, anaRows.length, 14).setValues(anaRows);
+      }
+
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
         serverTime: serverTime,
