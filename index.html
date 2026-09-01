@@ -10,7 +10,10 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -124,10 +127,8 @@
 
       <!-- Row 1: Logo + Theme Toggle -->
       <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-7 h-7 rounded-[2px] bg-sky-500 flex items-center justify-center font-black text-slate-950 text-xs tracking-tighter shadow-sm">
-            PL
-          </div>
+        <div class="flex items-center space-x-2.5">
+          <img src="logo.jpg" alt="Logo" class="w-8 h-8 rounded-[2px] object-cover shadow-sm border dark:border-slate-700/60 border-slate-300" />
           <div>
             <h1 class="font-extrabold text-xs uppercase tracking-widest leading-none dark:text-slate-100 text-slate-900">PowerTrack</h1>
             <div class="flex items-center gap-1.5 mt-0.5">

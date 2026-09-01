@@ -1,9 +1,16 @@
-const CACHE_NAME = 'powertrack-cache-v20';
+const CACHE_NAME = 'powertrack-cache-v21';
 
 const ASSETS_LOCAL = [
   './',
   'index.html',
   'manifest.json',
+  'logo.jpg',
+  'favicon.ico',
+  'favicon-32x32.png',
+  'favicon-16x16.png',
+  'apple-touch-icon.png',
+  'icon-192.png',
+  'icon-512.png',
   'icon.svg',
   'icons/black_for_light_theme/allenamento.png',
   'icons/black_for_light_theme/carica_immagine.png',
