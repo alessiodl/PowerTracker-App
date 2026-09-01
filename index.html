@@ -616,6 +616,17 @@
           </div>
         </div>
 
+        <!-- Main Save Catalog Button -->
+        <div class="flex gap-2 pt-1">
+          <button 
+            @click="saveCatalog" 
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-1.5"
+          >
+            <span>💾</span>
+            <span>Salva Catalogo</span>
+          </button>
+        </div>
+
       </section>
 
       <!-- ================= TAB 4: STORICO ================= -->
@@ -2087,8 +2098,8 @@
           });
           newExercise.name = '';
           await loadCatalog();
-          showToast('Nuovo esercizio inserito in catalogo!');
-          triggerDebouncedSync(1000);
+          await updatePendingCount();
+          showToast('Esercizio aggiunto al catalogo locale');
         }
 
         async function moveExerciseInCatalog(category, idx, dir) {
@@ -2111,7 +2122,24 @@
           }
 
           await loadCatalog();
-          triggerDebouncedSync(1000);
+          await updatePendingCount();
+        }
+
+        async function saveCatalog() {
+          const now = new Date().toISOString();
+          for (const cat of ['main', 'variant', 'accessory']) {
+            const list = filterExercises(cat);
+            for (let i = 0; i < list.length; i++) {
+              await db.exercises.update(list[i].id, {
+                order: i,
+                updatedAt: now,
+                _dirty: true
+              });
+            }
+          }
+          await loadCatalog();
+          await updatePendingCount();
+          showToast('✓ Catalogo salvato!');
         }
 
         async function deleteExerciseFromCatalog(id) {
@@ -2124,8 +2152,8 @@
               _dirty: true
             });
             await loadCatalog();
+            await updatePendingCount();
             showToast('Esercizio rimosso dal catalogo');
-            triggerDebouncedSync(500);
           }
         }
 
@@ -2622,6 +2650,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           copyModalJson,
           addNewExerciseToCatalog,
           moveExerciseInCatalog,
+          saveCatalog,
           deleteExerciseFromCatalog,
           requestDeleteExerciseFromCatalog,
           saveWebhookUrl,
