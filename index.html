@@ -791,6 +791,27 @@
           </div>
         </div>
 
+        <!-- Danger Zone: Reset Applicazione -->
+        <div class="bg-rose-600/10 dark:bg-rose-950/20 border border-rose-500/30 rounded-[2px] p-3.5 shadow-sm space-y-3">
+          <div>
+            <h2 class="font-extrabold text-rose-600 dark:text-rose-400 text-xs uppercase tracking-wider mb-1">Reset Applicazione</h2>
+            <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">
+              Ripristina l'applicazione allo stato iniziale, svuotando tutte le schede, gli allenamenti registrati e lo storico.
+            </p>
+          </div>
+
+          <button 
+            @click="requestResetApp" 
+            class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+          >
+            <span>RESET</span>
+          </button>
+
+          <p class="text-[11px] text-rose-600 dark:text-rose-400 leading-relaxed">
+            💡 <strong>Attenzione:</strong> Il reset agisce sul database locale. Le cancellazioni verranno inviate e applicate a Google Sheets alla prossima sincronizzazione.
+          </p>
+        </div>
+
       </section>
 
       <!-- ================= TAB 6: LIVELLI DI PERFORMANCE ================= -->
@@ -2572,6 +2593,54 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           return 'bg-[#7e57c2]';
         }
 
+        async function resetAppToInitialState() {
+          const now = new Date().toISOString();
+
+          // 1. Soft-delete di tutte le schede (templates)
+          const allTemplates = await db.templates.toArray();
+          for (const t of allTemplates) {
+            await db.templates.put({
+              ...t,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          }
+
+          // 2. Soft-delete di tutti gli allenamenti e dello storico (workoutLogs)
+          const allLogs = await db.workoutLogs.toArray();
+          for (const l of allLogs) {
+            await db.workoutLogs.put({
+              ...l,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          }
+
+          // 3. Svuotamento stati locali correnti
+          currentPlan.exercises = [];
+          currentWorkout.id = null;
+          currentWorkout.isRepeated = false;
+          currentWorkout.performedExercises = [];
+          workoutLogs.value = [];
+
+          // 4. Ricarica interfacce e contatori
+          await loadSelectedPlanAndWorkout();
+          await loadLogs();
+          await updatePendingCount();
+
+          showToast('Applicazione resettata. Premi "Sincronizza Ora" per propagare a Google Sheets.');
+        }
+
+        function requestResetApp() {
+          askConfirm(
+            'Reset Completo Applicazione',
+            'Sei sicuro di voler resettare l\'applicazione? Tutte le schede, gli allenamenti registrati e lo storico verranno cancellati dal dispositivo locale. L\'operazione verrà propagata a Google Sheets alla prossima sincronizzazione.',
+            async () => { await resetAppToInitialState(); }
+          );
+        }
+
         return {
           activeTab,
           isDarkMode,
@@ -2659,6 +2728,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           cancelConfirm,
           runConfirm,
           filterExercises,
+          requestResetApp,
           getCategoryLabel,
           getCategoryBadgeText,
           getCategoryHeaderBg
