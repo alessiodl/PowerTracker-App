@@ -704,13 +704,13 @@
               </div>
 
               <div class="pt-1 flex justify-end gap-2">
-                <button @click="editLogFromHistory(log)" class="px-2 py-0.5 bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-600/30 font-bold rounded-[2px] text-[10px] font-mono uppercase">
-                  ✏️ Carica
+                <button @click="editLogFromHistory(log)" class="px-2 py-0.5 bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-600/30 font-bold rounded-[2px] text-[10px] font-mono uppercase transition-all">
+                  Carica
                 </button>
-                <button @click="showLogDataModal(log)" class="px-2 py-0.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold rounded-[2px] text-[10px] font-mono uppercase">
-                  🔍 Dati
+                <button @click="showLogDataModal(log)" class="px-2 py-0.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 font-bold rounded-[2px] text-[10px] font-mono uppercase transition-all">
+                  Dati
                 </button>
-                <button @click="requestDeleteLog(log.id, log.date)" class="dark:text-slate-500 text-slate-400 hover:text-red-500 text-[10px] font-mono px-1">
+                <button @click="requestDeleteLog(log.id, log.date)" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-[2px] text-[10px] font-mono uppercase shadow-sm transition-all">
                   Elimina
                 </button>
               </div>
@@ -995,7 +995,7 @@
         </p>
         <pre class="flex-1 overflow-auto dark:bg-slate-950 bg-slate-100 dark:text-sky-300 text-sky-800 text-[11px] font-mono p-3 rounded-[2px] border dark:border-slate-800 border-slate-300 whitespace-pre-wrap select-all">{{ JSON.stringify(selectedLogForModal, null, 2) }}</pre>
         <div class="mt-3 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
-          <button @click="copyModalJson" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold rounded-[2px]">📋 Copia JSON</button>
+          <button @click="copyModalJson" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold rounded-[2px]">Copia JSON</button>
           <button @click="selectedLogForModal = null" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 text-xs font-mono font-bold rounded-[2px] dark:text-slate-200 text-slate-800">Chiudi</button>
         </div>
       </div>
