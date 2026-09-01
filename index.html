@@ -393,9 +393,6 @@
               </div>
               
               <div class="flex items-center gap-2">
-                <span v-if="getLastE1RM(ex)" class="text-[10px] font-mono bg-black/40 px-2 py-0.5 rounded-[2px] text-sky-200">
-                  e1RM: {{ getLastE1RM(ex) }} kg
-                </span>
                 <button @click="requestRemoveExerciseFromWorkout(exIdx, ex.exerciseName)" class="text-white/70 hover:text-white text-xs font-mono">
                   ✕
                 </button>
@@ -1972,14 +1969,6 @@
           );
         }
 
-        function getLastE1RM(ex) {
-          if (!ex.sets || ex.sets.length === 0) return null;
-          const validSet = [...ex.sets].reverse().find(s => s.weight > 0 && s.reps > 0);
-          if (!validSet) return null;
-          const e1rm = validSet.weight * (36 / (37 - validSet.reps));
-          return Math.round(e1rm * 10) / 10;
-        }
-
         function openExerciseHistory(exName) {
           const name = String(exName || '').toLowerCase();
           const records = [];
@@ -2812,7 +2801,6 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           removeExerciseFromWorkout,
           requestRemoveExerciseFromWorkout,
           requestClearWorkout,
-          getLastE1RM,
           saveWorkoutSession,
           addExerciseToPlanFromSelect,
           changeExerciseInPlan,
