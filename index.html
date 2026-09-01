@@ -1886,7 +1886,7 @@
             setNum: ex.sets.length + 1,
             weight: prevSet ? prevSet.weight : null,
             reps: prevSet ? prevSet.reps : null,
-            rest: '',
+            rest: prevSet ? (prevSet.rest || '') : '',
             rpe: prevSet ? prevSet.rpe : '',
             notes: ''
           });
