@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Manuale d'Uso - PowerTrack PWA</title>
+  
+  <meta name="theme-color" content="#11131a" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          borderRadius: {
+            DEFAULT: '2px', 'sm': '2px', 'md': '2px', 'lg': '2px', 'xl': '2px', '2xl': '2px', '3xl': '2px', 'full': '2px'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="dark:bg-[#0c0e14] bg-[#f4f6f9] text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="sticky top-0 z-40 dark:bg-[#0c0e14]/90 bg-[#f4f6f9]/90 backdrop-blur-md border-b dark:border-slate-800 border-slate-200 px-4 lg:px-8 py-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      
+      <a href="index.html" class="flex items-center space-x-3 group">
+        <img src="logo.png" alt="Logo" class="w-8 h-8 rounded-[22%] object-contain shadow-sm" />
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-sm uppercase tracking-widest leading-none dark:text-slate-100 text-slate-900">PowerTrack</span>
+          <span class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[2px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            Manuale
+          </span>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <button id="themeToggle" class="p-2 dark:bg-[#151924] bg-white border dark:border-slate-700/80 border-slate-300 rounded-[2px] hover:opacity-80 transition-all shadow-sm flex items-center justify-center cursor-pointer" title="Cambia Tema">
+          <img id="themeIcon" src="icons/white_for_dark_theme/sun.png" alt="Tema" class="w-4 h-4 object-contain" />
+        </button>
+        <a href="index.html" class="hidden sm:inline-block px-3 py-2 text-xs font-mono font-bold uppercase dark:text-slate-300 text-slate-700 hover:text-sky-500">
+          Home
+        </a>
+        <a href="app.html" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-md transition-all active:scale-[0.98]">
+          Apri l'App →
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 lg:px-8 py-10 space-y-12">
+
+    <!-- Title Header -->
+    <div class="border-b dark:border-slate-800 border-slate-200 pb-6 space-y-2">
+      <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Documentazione Ufficiale</span>
+      <h1 class="text-3xl sm:text-4xl font-extrabold uppercase tracking-tight dark:text-white text-slate-950">
+        Manuale Utente & Guida Tecnica
+      </h1>
+      <p class="text-xs sm:text-sm dark:text-slate-400 text-slate-600 leading-relaxed">
+        Guida completa all'installazione, all'uso delle 6 sezioni dell'app, alla sincronizzazione multi-dispositivo con Google Sheets e all'importazione con intelligenza artificiale.
+      </p>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="dark:bg-[#151924] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 p-5 shadow-sm space-y-3">
+      <h2 class="font-mono font-bold text-xs uppercase tracking-wider text-sky-600 dark:text-sky-400">Indice dei Contenuti</h2>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+        <li><a href="#architettura" class="hover:underline hover:text-sky-500">1. Architettura & Installazione PWA</a></li>
+        <li><a href="#schede" class="hover:underline hover:text-sky-500">2. Guida all'Uso (Le 6 Schede)</a></li>
+        <li><a href="#sync" class="hover:underline hover:text-sky-500">3. Sincronizzazione & Multi-Dispositivo</a></li>
+        <li><a href="#webhook" class="hover:underline hover:text-sky-500">4. Setup Google Apps Script Webhook</a></li>
+        <li><a href="#ia" class="hover:underline hover:text-sky-500">5. Setup & Risoluzione Problemi IA</a></li>
+      </ul>
+    </div>
+
+    <!-- Section 1: Architettura & Installazione -->
+    <section id="architettura" class="space-y-4 pt-4">
+      <div class="flex items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-2">
+        <span class="text-xs font-mono font-bold text-sky-500">01</span>
+        <h2 class="font-extrabold text-lg sm:text-xl uppercase tracking-wide dark:text-white text-slate-950">Architettura & Installazione</h2>
+      </div>
+
+      <div class="text-xs sm:text-sm dark:text-slate-300 text-slate-700 space-y-3 leading-relaxed">
+        <p>
+          PowerTrack è costruita come <strong>Progressive Web App (PWA) client-side</strong> con architettura Offline-First. I dati risiedono in IndexedDB locale (<code class="font-mono px-1 py-0.5 bg-slate-200 dark:bg-slate-800 rounded-[2px]">PowerTrackDB_v2</code>) garantendo autonomia totale in palestra anche in assenza di segnale cellulare.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-1.5">
+            <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">Installazione su iOS (Safari)</h3>
+            <p class="text-xs dark:text-slate-400 text-slate-600">
+              Apri l'app in Safari, tocca il pulsante di condivisione e seleziona <strong>"Aggiungi alla schermata Home"</strong>.
+            </p>
+          </div>
+          <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-1.5">
+            <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">Installazione su Android (Chrome)</h3>
+            <p class="text-xs dark:text-slate-400 text-slate-600">
+              Apri l'app in Chrome, tocca i tre puntini in alto a destra e seleziona <strong>"Installa app"</strong> o <strong>"Aggiungi a schermata Home"</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Le 6 Schede -->
+    <section id="schede" class="space-y-4 pt-4">
+      <div class="flex items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-2">
+        <span class="text-xs font-mono font-bold text-sky-500">02</span>
+        <h2 class="font-extrabold text-lg sm:text-xl uppercase tracking-wide dark:text-white text-slate-950">Guida all'Uso delle 6 Schede</h2>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm dark:text-slate-300 text-slate-700 leading-relaxed">
+        
+        <!-- Tab 1 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">1. SCHEDA (Pianificazione Target)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            Pianifica le sessioni per Programma (1-2), Settimana (1-14) e Seduta (A-D). Puoi impostare target di carico, serie, ripetizioni, recuperi e note tecniche. Include l'importazione automatica con intelligenza artificiale tramite foto o testo incollato.
+          </p>
+        </div>
+
+        <!-- Tab 2 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">2. ALLENAMENTO (Sessione Live)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            La schermata da usare in pedana. Carica in automatico gli esercizi previsti dalla Scheda Target, permette di inserire carichi effettivi, ripetizioni sollevate, RPE/RIR soggettivo, note per singola serie e timer di recupero rapido con conto alla rovescia. Salva in tempo reale a zero latenza.
+          </p>
+        </div>
+
+        <!-- Tab 3 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">3. CATALOGO (Esercizi e Categorie)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            Gestione di tutti gli esercizi suddivisi nei 3 blocchi ufficiali: Fondamentale, Variante e Complementare. Include il controllo anti-duplicati e il riordinamento prioritario con le frecce.
+          </p>
+        </div>
+
+        <!-- Tab 4 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">4. STORICO (Analisi Sedute e Progressioni)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            Consulta l'archivio cronologico di tutte le sedute registrate con badge di sincronizzazione, visualizzazione dati JSON grezzi, riapertura dell'allenamento per modifiche e ricerca progressione per singolo esercizio.
+          </p>
+        </div>
+
+        <!-- Tab 5 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">5. SYNC & CONFIG (Sincronizzazione & Reset)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            Mostra lo stato del collegamento, l'orario dell'ultima sincronizzazione e il contatore delle modifiche in sospeso. Contiene il menu protetto per Webhook e Gemini API Key, la sezione FAQ e il pulsante per il Reset completo dell'app.
+          </p>
+        </div>
+
+        <!-- Tab 6 -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-sky-600 dark:text-sky-400">6. LIVELLI (Standard di Forza su Peso Corporeo)</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-600">
+            Calcolatore dei livelli di performance per i fondamentali del powerlifting in base al peso corporeo (BW in kg), con persistenza locale e zero chiamate di rete.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 3: Sincronizzazione & Multi-Dispositivo -->
+    <section id="sync" class="space-y-4 pt-4">
+      <div class="flex items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-2">
+        <span class="text-xs font-mono font-bold text-sky-500">03</span>
+        <h2 class="font-extrabold text-lg sm:text-xl uppercase tracking-wide dark:text-white text-slate-950">Sincronizzazione & Multi-Dispositivo</h2>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm dark:text-slate-300 text-slate-700 leading-relaxed">
+        
+        <p>
+          Il motore di sincronizzazione a 2 vie trasmette a Google Sheets solo i record modificati o cancellati (delta sync) con risoluzione Last-Write-Wins sui timestamp.
+        </p>
+
+        <!-- Sheets table summary -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs font-mono text-left border dark:border-slate-800 border-slate-200 rounded-[2px]">
+            <thead class="dark:bg-slate-900 bg-slate-100 text-[10px] uppercase font-bold dark:text-slate-300 text-slate-700">
+              <tr>
+                <th class="p-2.5 border-b dark:border-slate-800 border-slate-200">Nome Foglio</th>
+                <th class="p-2.5 border-b dark:border-slate-800 border-slate-200">Ruolo</th>
+                <th class="p-2.5 border-b dark:border-slate-800 border-slate-200">Note</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+              <tr>
+                <td class="p-2.5 font-bold text-sky-500">Analisi</td>
+                <td class="p-2.5">Consultazione & Grafici su PC</td>
+                <td class="p-2.5 dark:text-slate-400 text-slate-600">100% pulito. Solo sedute attive, zero righe cancellate, zero colonne tecniche.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">Allenamenti</td>
+                <td class="p-2.5">Database tecnico sedute</td>
+                <td class="p-2.5 dark:text-slate-400 text-slate-600">Contiene lo storico completo e la colonna Eliminato per la sync multi-dispositivo.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">Schede</td>
+                <td class="p-2.5">Database schede target</td>
+                <td class="p-2.5 dark:text-slate-400 text-slate-600">Pianificazione dei mesocicli per programma, settimana e seduta.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">Catalogo</td>
+                <td class="p-2.5">Database esercizi</td>
+                <td class="p-2.5 dark:text-slate-400 text-slate-600">Elenco ufficiale degli esercizi e delle categorie.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Reset Procedure -->
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-rose-500">Procedura di Reset e Pulizia Totale a Inizio Stagione</h3>
+          <ol class="list-decimal list-inside space-y-1 text-xs dark:text-slate-400 text-slate-600 font-mono">
+            <li>Nel Google Sheet fai <strong>File &gt; Crea una copia</strong> per conservare l'archivio storico;</li>
+            <li>Premi <strong>RESET</strong> e poi <strong>Sincronizza Ora</strong> su TUTTI i dispositivi e browser in cui usi l'app (telefono principale, telefono da palestra collegato al Wi-Fi e browser PC / Web app);</li>
+            <li>Apri il Google Sheet e, nei fogli <em>Allenamenti</em> e <em>Schede</em>, elimina tutte le righe dalla riga 2 in giù (lasciando intatta la riga 1 di intestazione).</li>
+          </ol>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 4: Webhook Setup & Code.gs -->
+    <section id="webhook" class="space-y-4 pt-4">
+      <div class="flex items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-2">
+        <span class="text-xs font-mono font-bold text-sky-500">04</span>
+        <h2 class="font-extrabold text-lg sm:text-xl uppercase tracking-wide dark:text-white text-slate-950">Setup Google Apps Script Webhook</h2>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm dark:text-slate-300 text-slate-700 leading-relaxed">
+        <ol class="list-decimal list-inside space-y-1.5 text-xs font-mono dark:text-slate-300 text-slate-700">
+          <li>Crea un nuovo Foglio Google su Google Drive;</li>
+          <li>Fai clic su <strong>Estensioni &gt; Apps Script</strong>;</li>
+          <li>Sostituisci il codice presente in <code class="font-bold">Code.gs</code> con il codice sottostante;</li>
+          <li>Salva il progetto con l'icona del floppy;</li>
+          <li>Fai clic su <strong>Esegui distribuzione &gt; Gestisci distribuzioni</strong>, crea una Nuova distribuzione come <em>Applicazione Web</em> con accesso impostato su <strong>Chiunque</strong>;</li>
+          <li>Copia l'URL dell'applicazione web (termina con <code class="font-bold text-sky-500">/exec</code>);</li>
+          <li>Apri PowerTrack, vai nella scheda <strong>SYNC</strong>, espandi <em>Configurazione e Chiavi</em>, clicca su <strong>Modifica</strong> nel box Webhook, incolla l'URL e premi <strong>Salva</strong>.</li>
+        </ol>
+
+        <!-- Code Block -->
+        <div class="relative dark:bg-slate-950 bg-slate-900 text-slate-200 p-4 rounded-[2px] font-mono text-xs overflow-x-auto border dark:border-slate-800 border-slate-700 shadow-inner">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-[11px]">
+            <span class="text-slate-400">Code.gs (Google Apps Script)</span>
+            <button id="copyCodeBtn" class="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-[2px] font-bold text-[10px] uppercase transition-all cursor-pointer">
+              Copia Codice
+            </button>
+          </div>
+          <pre id="codeBlock" class="overflow-x-auto leading-relaxed"><code>function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    // Lock per prevenire scritture concorrenti contemporanee
+    lock.waitLock(15000);
+    
+    var payload = JSON.parse(e.postData.contents);
+    var action = payload.action || "sync";
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var serverTime = new Date().toISOString();
+
+    // Inizializzazione fogli se non esistono
+    var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
+    var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
+    var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
+
+    if (action === "sync") {
+      // ==========================================
+      // 1. CATALOGO ESERCIZI (In-memory merge + batch update)
+      // ==========================================
+      var catMap = {};
+      if (sheetCat.getLastRow() > 1) {
+        var cRows = sheetCat.getRange(2, 1, sheetCat.getLastRow() - 1, 5).getValues();
+        for (var i = 0; i < cRows.length; i++) {
+          var cid = String(cRows[i][0]);
+          if (cid) {
+            catMap[cid] = {
+              id: cid,
+              name: String(cRows[i][1] || ""),
+              category: String(cRows[i][2] || "accessory"),
+              updatedAt: cRows[i][3] instanceof Date ? cRows[i][3].toISOString() : String(cRows[i][3] || ""),
+              isDeleted: cRows[i][4] === "Sì"
+            };
+          }
+        }
+      }
+      var clientExercises = payload.exercises || [];
+      for (var i = 0; i < clientExercises.length; i++) {
+        var cex = clientExercises[i];
+        var cid = String(cex.id);
+        var cup = cex.updatedAt ? new Date(cex.updatedAt).getTime() : new Date().getTime();
+        var exUp = catMap[cid] && catMap[cid].updatedAt ? new Date(catMap[cid].updatedAt).getTime() : 0;
+        if (!catMap[cid] || cup >= exUp) {
+          catMap[cid] = {
+            id: cid,
+            name: cex.name || "",
+            category: cex.category || "accessory",
+            updatedAt: cex.updatedAt || serverTime,
+            isDeleted: !!cex.isDeleted
+          };
+        }
+      }
+      sheetCat.clear();
+      sheetCat.appendRow(["ID", "Nome", "Categoria", "DataAggiornamento", "Eliminato"]);
+      sheetCat.getRange(1, 1, 1, 5).setFontWeight("bold");
+      var catOutRows = [];
+      var catList = Object.keys(catMap).map(function(k) { return catMap[k]; });
+      for (var i = 0; i < catList.length; i++) {
+        catOutRows.push([
+          catList[i].id, catList[i].name, catList[i].category, catList[i].updatedAt, catList[i].isDeleted ? "Sì" : "No"
+        ]);
+      }
+      if (catOutRows.length > 0) {
+        sheetCat.getRange(2, 1, catOutRows.length, 5).setValues(catOutRows);
+      }
+
+      // ==========================================
+      // 2. SCHEDE (TEMPLATES) (In-memory merge + batch update)
+      // ==========================================
+      var tplMap = {};
+      if (sheetSch.getLastRow() > 1) {
+        var sRows = sheetSch.getRange(2, 1, sheetSch.getLastRow() - 1, 11).getValues();
+        for (var i = 0; i < sRows.length; i++) {
+          var tid = String(sRows[i][0]);
+          if (tid) {
+            if (!tplMap[tid]) {
+              tplMap[tid] = {
+                id: tid,
+                program: Number(sRows[i][1]),
+                week: Number(sRows[i][2]),
+                session: String(sRows[i][3]),
+                exercises: [],
+                updatedAt: sRows[i][9] instanceof Date ? sRows[i][9].toISOString() : String(sRows[i][9] || ""),
+                isDeleted: sRows[i][10] === "Sì"
+              };
+            }
+            if (sRows[i][4]) {
+              tplMap[tid].exercises.push({
+                exerciseName: String(sRows[i][4]),
+                category: String(sRows[i][5] || ""),
+                target: String(sRows[i][6] || ""),
+                rest: String(sRows[i][7] || ""),
+                notes: String(sRows[i][8] || "")
+              });
+            }
+          }
+        }
+      }
+      var clientTemplates = payload.templates || [];
+      for (var i = 0; i < clientTemplates.length; i++) {
+        var ct = clientTemplates[i];
+        var tid = String(ct.id || ("p" + ct.program + "_w" + ct.week + "_s" + ct.session));
+        var cup = ct.updatedAt ? new Date(ct.updatedAt).getTime() : new Date().getTime();
+        var exUp = tplMap[tid] && tplMap[tid].updatedAt ? new Date(tplMap[tid].updatedAt).getTime() : 0;
+        if (!tplMap[tid] || cup >= exUp) {
+          tplMap[tid] = {
+            id: tid,
+            program: Number(ct.program),
+            week: Number(ct.week),
+            session: String(ct.session),
+            exercises: ct.exercises || [],
+            updatedAt: ct.updatedAt || serverTime,
+            isDeleted: !!ct.isDeleted
+          };
+        }
+      }
+      sheetSch.clear();
+      sheetSch.appendRow(["ID_Scheda", "Programma", "Settimana", "Seduta", "Esercizio", "Categoria", "Target", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
+      sheetSch.getRange(1, 1, 1, 11).setFontWeight("bold");
+      var tplOutRows = [];
+      var tplList = Object.keys(tplMap).map(function(k) { return tplMap[k]; });
+      for (var i = 0; i < tplList.length; i++) {
+        var t = tplList[i];
+        var isDel = (t.isDeleted || !t.exercises || t.exercises.length === 0) ? "Sì" : "No";
+        if (isDel === "No") {
+          for (var j = 0; j < t.exercises.length; j++) {
+            var ex = t.exercises[j];
+            tplOutRows.push([
+              t.id, t.program, t.week, t.session,
+              ex.exerciseName || "", ex.category || "", ex.target || "", ex.rest || "", ex.notes || "",
+              t.updatedAt, "No"
+            ]);
+          }
+        } else {
+          tplOutRows.push([
+            t.id, t.program, t.week, t.session, "", "", "", "", "", t.updatedAt, "Sì"
+          ]);
+        }
+      }
+      if (tplOutRows.length > 0) {
+        sheetSch.getRange(2, 1, tplOutRows.length, 11).setValues(tplOutRows);
+      }
+
+      // ==========================================
+      // 3. ALLENAMENTI (WORKOUT LOGS) (In-memory merge + batch update)
+      // ==========================================
+      var logMap = {};
+      if (sheetAll.getLastRow() > 1) {
+        var aRows = sheetAll.getRange(2, 1, sheetAll.getLastRow() - 1, 17).getValues();
+        for (var i = 0; i < aRows.length; i++) {
+          var lid = String(aRows[i][0]);
+          if (lid) {
+            var rawDate = aRows[i][1];
+            var date = "";
+            if (rawDate instanceof Date) {
+              date = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+            } else if (rawDate) {
+              var dObj = new Date(rawDate);
+              if (!isNaN(dObj.getTime())) {
+                date = Utilities.formatDate(dObj, Session.getScriptTimeZone(), "yyyy-MM-dd");
+              } else {
+                date = String(rawDate);
+              }
+            }
+            var prog = Number(aRows[i][2]);
+            var week = Number(aRows[i][3]);
+            var sess = String(aRows[i][4]);
+            var isRep = aRows[i][5] === "Sì";
+            var exName = String(aRows[i][6] || "");
+            var exCat = String(aRows[i][7] || "");
+            var exTarg = String(aRows[i][8] || "");
+            var setNum = Number(aRows[i][9] || 1);
+            var weight = aRows[i][10] !== "" ? Number(aRows[i][10]) : null;
+            var reps = aRows[i][11] !== "" ? Number(aRows[i][11]) : null;
+            var rpe = String(aRows[i][12] || "");
+            var rest = String(aRows[i][13] || "");
+            var notes = String(aRows[i][14] || "");
+            var upTime = aRows[i][15] instanceof Date ? aRows[i][15].toISOString() : String(aRows[i][15] || "");
+            var isDel = aRows[i][16] === "Sì";
+
+            if (!logMap[lid]) {
+              logMap[lid] = {
+                id: lid,
+                date: date,
+                program: prog,
+                week: week,
+                session: sess,
+                isRepeated: isRep,
+                performedExercises: [],
+                updatedAt: upTime,
+                isDeleted: isDel,
+                synced: true
+              };
+            }
+            if (exName) {
+              var exObj = null;
+              for (var k = 0; k < logMap[lid].performedExercises.length; k++) {
+                if (logMap[lid].performedExercises[k].exerciseName === exName) {
+                  exObj = logMap[lid].performedExercises[k];
+                  break;
+                }
+              }
+              if (!exObj) {
+                exObj = { exerciseName: exName, category: exCat, targetReference: exTarg, sets: [] };
+                logMap[lid].performedExercises.push(exObj);
+              }
+              exObj.sets.push({ setNum: setNum, weight: weight, reps: reps, rpe: rpe, rest: rest, notes: notes });
+            }
+          }
+        }
+      }
+      var clientLogs = payload.workoutLogs || [];
+      for (var i = 0; i < clientLogs.length; i++) {
+        var clog = clientLogs[i];
+        var lid = String(clog.id);
+        var cup = clog.updatedAt ? new Date(clog.updatedAt).getTime() : new Date().getTime();
+        var exUp = logMap[lid] && logMap[lid].updatedAt ? new Date(logMap[lid].updatedAt).getTime() : 0;
+        if (!logMap[lid] || cup >= exUp) {
+          logMap[lid] = {
+            id: lid,
+            date: clog.date || "",
+            program: Number(clog.program),
+            week: Number(clog.week),
+            session: String(clog.session),
+            isRepeated: !!clog.isRepeated,
+            performedExercises: clog.performedExercises || [],
+            updatedAt: clog.updatedAt || serverTime,
+            isDeleted: !!clog.isDeleted,
+            synced: true
+          };
+        }
+      }
+      sheetAll.clear();
+      sheetAll.appendRow(["ID_Allenamento", "Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso", "Reps", "RPE", "Recupero", "Note", "DataAggiornamento", "Eliminato"]);
+      sheetAll.getRange(1, 1, 1, 17).setFontWeight("bold");
+      var logOutRows = [];
+      var logList = Object.keys(logMap).map(function(k) {
+        var l = logMap[k];
+        if (l.performedExercises) {
+          l.performedExercises.forEach(function(ex) { ex.sets.sort(function(a, b) { return a.setNum - b.setNum; }); });
+        }
+        return l;
+      });
+      for (var i = 0; i < logList.length; i++) {
+        var l = logList[i];
+        var isDel = l.isDeleted ? "Sì" : "No";
+        var isRep = l.isRepeated ? "Sì" : "No";
+        var pExs = l.performedExercises || [];
+        if (!l.isDeleted && pExs.length > 0) {
+          for (var j = 0; j < pExs.length; j++) {
+            var ex = pExs[j];
+            var sets = ex.sets || [];
+            for (var s = 0; s < sets.length; s++) {
+              var set = sets[s];
+              var hasData = (set.weight !== null && set.weight !== "") || 
+                            (set.reps !== null && set.reps !== "") || 
+                            (set.rpe && String(set.rpe).trim() !== "") || 
+                            (set.notes && String(set.notes).trim() !== "");
+              if (hasData) {
+                logOutRows.push([
+                  l.id, l.date, l.program, l.week, l.session, isRep,
+                  ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                  set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                  set.rpe || "", set.rest || "", set.notes || "",
+                  l.updatedAt, isDel
+                ]);
+              }
+            }
+          }
+        } else if (l.isDeleted) {
+          logOutRows.push([
+            l.id, l.date, l.program, l.week, l.session, isRep,
+            "", "", "", "", "", "", "", "", "",
+            l.updatedAt, "Sì"
+          ]);
+        }
+      }
+      if (logOutRows.length > 0) {
+        sheetAll.getRange(2, 1, logOutRows.length, 17).setValues(logOutRows);
+      }
+
+      // ==========================================
+      // 4. FOGLIO "ANALISI" (SOLO RECORD ATTIVI, ORDINATI PER DATA E PULITI)
+      // ==========================================
+      var sheetAna = ss.getSheetByName("Analisi") || ss.insertSheet("Analisi");
+      sheetAna.clear();
+      sheetAna.appendRow(["Data", "Programma", "Settimana", "Seduta", "Ripetuto", "Esercizio", "Categoria", "Target", "Set", "Peso (kg)", "Reps", "RPE", "Recupero", "Note"]);
+      sheetAna.getRange(1, 1, 1, 14).setFontWeight("bold");
+
+      var anaRows = [];
+      var activeLogs = logList.filter(function(l) { return !l.isDeleted && l.performedExercises && l.performedExercises.length > 0; });
+      activeLogs.sort(function(a, b) { return String(b.date).localeCompare(String(a.date)); });
+
+      for (var i = 0; i < activeLogs.length; i++) {
+        var l = activeLogs[i];
+        var isRep = l.isRepeated ? "Sì" : "No";
+        for (var j = 0; j < l.performedExercises.length; j++) {
+          var ex = l.performedExercises[j];
+          var sets = ex.sets || [];
+          for (var s = 0; s < sets.length; s++) {
+            var set = sets[s];
+            var hasData = (set.weight !== null && set.weight !== "") || 
+                          (set.reps !== null && set.reps !== "") || 
+                          (set.rpe && String(set.rpe).trim() !== "") || 
+                          (set.notes && String(set.notes).trim() !== "");
+            if (hasData) {
+              anaRows.push([
+                l.date, l.program, l.week, l.session, isRep,
+                ex.exerciseName || "", ex.category || "", ex.targetReference || "",
+                set.setNum || (s + 1), set.weight !== null ? set.weight : "", set.reps !== null ? set.reps : "",
+                set.rpe || "", set.rest || "", set.notes || ""
+              ]);
+            }
+          }
+        }
+      }
+      if (anaRows.length > 0) {
+        sheetAna.getRange(2, 1, anaRows.length, 14).setValues(anaRows);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        serverTime: serverTime,
+        data: {
+          exercises: catList,
+          templates: tplList,
+          workoutLogs: logList
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Azione sconosciuta" }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}</code></pre>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 5: Gemini AI Setup -->
+    <section id="ia" class="space-y-4 pt-4">
+      <div class="flex items-center gap-2 border-b dark:border-slate-800 border-slate-200 pb-2">
+        <span class="text-xs font-mono font-bold text-sky-500">05</span>
+        <h2 class="font-extrabold text-lg sm:text-xl uppercase tracking-wide dark:text-white text-slate-950">Setup & Risoluzione Problemi IA</h2>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm dark:text-slate-300 text-slate-700 leading-relaxed">
+        <ol class="list-decimal list-inside space-y-1.5 text-xs font-mono dark:text-slate-300 text-slate-700">
+          <li>Accedi a <a href="https://aistudio.google.com/" target="_blank" class="text-sky-500 hover:underline">Google AI Studio</a>;</li>
+          <li>Genera una chiave API personale gratuita (Gemini API Key);</li>
+          <li>Apri PowerTrack, vai nella scheda <strong>SYNC</strong>, espandi <em>Configurazione e Chiavi</em>, clicca su <strong>Modifica</strong> nel box API Key, incolla la chiave e premi <strong>Salva</strong>;</li>
+          <li>Ora puoi importare le schede toccando <strong>Carica immagine</strong> o <strong>Incolla appunti</strong> (anche <kbd class="px-1 py-0.5 bg-slate-200 dark:bg-slate-800 rounded-[2px]">Ctrl+V</kbd> da PC).</li>
+        </ol>
+
+        <div class="dark:bg-[#151924] bg-white p-4 rounded-[2px] border dark:border-slate-700 border-slate-300 space-y-2">
+          <h3 class="font-mono font-bold text-xs uppercase text-amber-600 dark:text-amber-400">Risoluzione Problemi IA</h3>
+          <ul class="space-y-1.5 text-xs dark:text-slate-400 text-slate-600 font-mono">
+            <li>• <strong>Errore API o Modello non disponibile:</strong> Verifica lo stato della chiave su Google AI Studio o aggiorna il nome del modello alla riga <code class="font-bold">apiUrl</code> in <code class="font-bold">app.html</code> (es. <code class="font-bold text-sky-500">gemini-2.0-flash</code>).</li>
+            <li>• <strong>Estrazione imprecisa o fallita:</strong> Assicurati che l'immagine sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda usando <em>Incolla appunti</em>.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t dark:border-slate-800 border-slate-200 py-8 px-4 lg:px-8 dark:bg-[#0c0e14] bg-[#eef2f6] text-xs font-mono">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      
+      <div class="flex items-center space-x-2">
+        <img src="logo.png" alt="Logo" class="w-5 h-5 rounded-[22%] object-contain" />
+        <span class="font-bold uppercase dark:text-slate-300 text-slate-700">PowerTrack PWA</span>
+        <span class="text-slate-400">•</span>
+        <span class="dark:text-slate-500 text-slate-500">Manuale Utente Ufficiale</span>
+      </div>
+
+      <div class="flex items-center gap-4 text-[11px] font-bold">
+        <a href="index.html" class="text-sky-600 dark:text-sky-400 hover:underline uppercase">Home</a>
+        <span class="text-slate-400">•</span>
+        <a href="app.html" class="text-sky-600 dark:text-sky-400 hover:underline uppercase">Apri App</a>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Theme Toggle & Copy Code Logic Script -->
+  <script>
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const htmlEl = document.documentElement;
+
+    function applyTheme(isDark) {
+      if (isDark) {
+        htmlEl.classList.add('dark');
+        htmlEl.classList.remove('light');
+        themeIcon.src = 'icons/white_for_dark_theme/sun.png';
+      } else {
+        htmlEl.classList.remove('dark');
+        htmlEl.classList.add('light');
+        themeIcon.src = 'icons/black_for_light_theme/moon.png';
+      }
+      localStorage.setItem('pl_theme', isDark ? 'dark' : 'light');
+    }
+
+    const savedTheme = localStorage.getItem('pl_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isInitialDark = savedTheme ? savedTheme === 'dark' : (prefersDark !== false);
+    applyTheme(isInitialDark);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const currentlyDark = htmlEl.classList.contains('dark');
+      applyTheme(!currentlyDark);
+    });
+
+    // Copy Code Block Handler
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const codeBlock = document.getElementById('codeBlock');
+    copyCodeBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+        copyCodeBtn.innerText = 'COPIATO!';
+        copyCodeBtn.classList.remove('bg-sky-600', 'hover:bg-sky-500');
+        copyCodeBtn.classList.add('bg-emerald-600');
+        setTimeout(() => {
+          copyCodeBtn.innerText = 'COPIA CODICE';
+          copyCodeBtn.classList.remove('bg-emerald-600');
+          copyCodeBtn.classList.add('bg-sky-600', 'hover:bg-sky-500');
+        }, 2000);
+      });
+    });
+  </script>
+
+</body>
+</html>
