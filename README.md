@@ -507,8 +507,19 @@ function doPost(e) {
 }
 ```
 
-4. Salva il progetto di script.
-5. Fai clic su **"Esegui distribuzione"** > **"Gestisci distribuzioni"** > Modifica la versione corrente selezionando **"Nuova versione"** e premi **"Distribuisci"** (oppure crea una Nuova distribuzione se è la prima volta).
-6. Copia l'URL dell'applicazione web (termina con `/exec`).
-7. Apri l'app PowerTrack, vai nella scheda "SYNC & STORICO", incolla l'URL in "Google Sheets Sync Webhook" e premi "Salva Webhook URL".
+7. Apri l'app PowerTrack $\rightarrow$ Tab **`SYNC`** $\rightarrow$ Espandi **"Configurazione e Chiavi"** $\rightarrow$ clicca su **`Modifica`** nel box Webhook $\rightarrow$ Incolla l'URL e premi **`Salva`**.
+
+---
+
+## 5. SETUP FUNZIONALITÀ IA (GOOGLE GEMINI)
+
+1. Accedi a [Google AI Studio](https://aistudio.google.com/).
+2. Genera una chiave API gratuita (**Gemini API Key**).
+3. Apri l'app PowerTrack $\rightarrow$ Tab **`SYNC`** $\rightarrow$ Espandi **"Configurazione e Chiavi"** $\rightarrow$ clicca su **`Modifica`** nel box API Key $\rightarrow$ Incolla la tua chiave (es. `AIzaSy...`) e premi **`Salva`**.
+4. Ora puoi importare all'istante schede e carichi scattando foto o incollando screenshot nella scheda `SCHEDA`.
+
+### ⚠️ Risoluzione problemi IA:
+* **Errore API o Modello non disponibile**: Se Google dovesse aggiornare o dismettere una versione del modello, verifica lo stato della chiave su AI Studio o aggiorna il nome del modello (es. `gemini-2.0-flash`) alla riga `apiUrl` in `index.html`.
+* **Estrazione imprecisa o fallita**: Assicurati che l'immagine sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda usando il pulsante **`Incolla appunti`** (o premendo `Ctrl+V` da PC).
+
 
