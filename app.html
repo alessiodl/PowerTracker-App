@@ -162,10 +162,15 @@
 
     <!-- SESSION BANNER TITLE -->
     <div class="dark:bg-slate-900/90 bg-slate-800 text-white py-2 px-4 text-center border-b border-slate-800 shadow-inner">
-      <h2 class="text-sm md:text-base font-black uppercase tracking-widest font-mono">
-        SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
-      </h2>
-      <p class="text-[10px] text-slate-300 font-mono tracking-wide">{{ getProgramBannerLabel(selectedProgram) }}</p>
+      <div class="flex items-center justify-center gap-2">
+        <h2 class="text-sm md:text-base font-black uppercase tracking-widest font-mono">
+          SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
+        </h2>
+        <span v-if="isPlanningConfigPendingSync" class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[2px] bg-amber-500/20 text-amber-300 border border-amber-500/40" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
+          Struttura non sincronizzata
+        </span>
+      </div>
+      <p class="text-[10px] text-slate-300 font-mono tracking-wide mt-0.5">{{ getProgramBannerLabel(selectedProgram) }}</p>
     </div>
 
     <main class="flex-1 px-3 py-3 space-y-4">
@@ -765,7 +770,10 @@
           >
             <div class="flex items-center gap-2">
               <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Struttura e Pianificazione</span>
-              <span class="text-[10px] font-mono text-slate-400 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-[2px]">
+              <span v-if="isPlanningConfigPendingSync" class="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-[2px] animate-pulse">
+                Da sincronizzare
+              </span>
+              <span v-else class="text-[10px] font-mono text-slate-400 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-[2px]">
                 {{ configNumSessions }} Giorni • {{ configNumWeeks }} Settimane • {{ configNumPrograms }} Prog
               </span>
             </div>
@@ -1405,6 +1413,12 @@
           return all.slice(0, count);
         });
 
+        const isPlanningConfigPendingSync = computed(() => {
+          if (!configUpdatedAt.value) return false;
+          if (!lastSyncTime.value) return true;
+          return new Date(configUpdatedAt.value).getTime() > new Date(lastSyncTime.value).getTime();
+        });
+
         function getProgramLabel(p) {
           const custom = configProgramLabels.value[p] && configProgramLabels.value[p].trim();
           return custom ? `P${p}: ${custom}` : `PROG ${p}`;
@@ -1435,7 +1449,7 @@
           }
 
           onFilterChange();
-          triggerDebouncedSync(1000);
+          updatePendingCount();
         }
 
         function updateProgramLabel(p, val) {
@@ -1443,7 +1457,7 @@
           configUpdatedAt.value = new Date().toISOString();
           localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
           localStorage.setItem('pl_cfg_updated_at', configUpdatedAt.value);
-          triggerDebouncedSync(1500);
+          updatePendingCount();
         }
 
         const exercises = ref([]);
@@ -1537,7 +1551,8 @@
             const dirtyEx = await db.exercises.filter(e => !!e._dirty).count();
             const dirtyTpl = await db.templates.filter(t => !!t._dirty).count();
             const dirtyLogs = await db.workoutLogs.filter(l => !!l._dirty).count();
-            pendingChangesCount.value = dirtyEx + dirtyTpl + dirtyLogs;
+            const configPending = isPlanningConfigPendingSync.value ? 1 : 0;
+            pendingChangesCount.value = dirtyEx + dirtyTpl + dirtyLogs + configPending;
           } catch (e) {
             console.warn('Errore conteggio pending:', e);
           }
@@ -3124,6 +3139,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           getCategoryBadgeText,
           getCategoryHeaderBg,
           isPlanningExpanded,
+          isPlanningConfigPendingSync,
           configNumPrograms,
           configNumWeeks,
           configNumSessions,
