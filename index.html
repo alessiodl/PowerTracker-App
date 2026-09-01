@@ -752,16 +752,38 @@
           </div>
         </div>
 
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
-          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Storico Esercizio</h2>
-          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Consulta rapidamente lo storico di un esercizio: data, seduta, serie e carichi usati.</p>
-          <select 
-            @change="openExerciseHistoryFromSelect($event)" 
-            class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none cursor-pointer"
-          >
-            <option value="">Seleziona un esercizio...</option>
-            <option v-for="name in allExerciseNames" :key="name" :value="name">{{ name }}</option>
-          </select>
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
+          <div>
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Storico Esercizio</h2>
+            <p class="text-xs dark:text-slate-400 text-slate-500">Consulta rapidamente lo storico di un esercizio: data, seduta, serie e carichi usati.</p>
+          </div>
+
+          <div class="space-y-2">
+            <div class="relative">
+              <input 
+                type="text" 
+                v-model="exerciseSearchQuery" 
+                placeholder="🔍 Filtra esercizio (es. Squat, Panca, Stacco...)" 
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 font-mono"
+              />
+              <button 
+                v-if="exerciseSearchQuery" 
+                @click="exerciseSearchQuery = ''" 
+                class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-200 text-xs font-bold font-mono"
+                title="Cancella filtro"
+              >✕</button>
+            </div>
+
+            <select 
+              @change="openExerciseHistoryFromSelect($event)" 
+              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 cursor-pointer font-mono"
+            >
+              <option value="">
+                {{ filteredExerciseNames.length === 0 ? 'Nessun esercizio corrispondente' : `Seleziona un esercizio (${filteredExerciseNames.length})...` }}
+              </option>
+              <option v-for="name in filteredExerciseNames" :key="name" :value="name">{{ name }}</option>
+            </select>
+          </div>
         </div>
 
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
@@ -893,10 +915,11 @@
             </thead>
             <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
               <tr v-for="(rec, i) in exerciseHistory" :key="i">
-                <td class="px-2 py-2 dark:text-slate-200 text-slate-800 font-bold whitespace-nowrap">{{ rec.date }}</td>
-                <td class="px-2 py-2 dark:text-slate-400 text-slate-500 whitespace-nowrap">
-                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-bold border border-amber-500/20 mr-1">P{{ rec.program }} W{{ rec.week }}</span>
-                  Giorno {{ rec.session }}
+                <td class="px-2 py-2 dark:text-slate-200 text-slate-800 font-bold whitespace-nowrap">{{ formatDateIT(rec.date) }}</td>
+                <td class="px-2 py-2 whitespace-nowrap">
+                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-mono font-bold border border-amber-500/20">
+                    P{{ rec.program }}-W{{ rec.week }}-{{ rec.session }}
+                  </span>
                 </td>
                 <td class="px-2 py-2 dark:text-sky-300 text-sky-700">{{ rec.setsText }}</td>
                 <td class="px-2 py-2 dark:text-slate-400 text-slate-500">{{ rec.targetReference || '—' }}</td>
@@ -1277,6 +1300,13 @@
             }
           });
           return Array.from(names).sort((a, b) => a.localeCompare(b));
+        });
+
+        const exerciseSearchQuery = ref('');
+        const filteredExerciseNames = computed(() => {
+          const query = exerciseSearchQuery.value.trim().toLowerCase();
+          if (!query) return allExerciseNames.value;
+          return allExerciseNames.value.filter(name => name.toLowerCase().includes(query));
         });
 
         function openNotesDialog(exIdx, sIdx) {
@@ -2442,6 +2472,8 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           openExerciseHistory,
           openExerciseHistoryFromSelect,
           allExerciseNames,
+          exerciseSearchQuery,
+          filteredExerciseNames,
           formatDateIT,
           onFilterChange,
           onWorkoutDateChange,
