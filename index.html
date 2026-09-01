@@ -1277,7 +1277,6 @@
           activeBodyWeight.value = n;
           localStorage.setItem('pl_body_weight', String(n));
           showToast('Carichi calcolati in base al peso corporeo!');
-          triggerDebouncedSync(1000);
         }
 
         function resetLevels() {
@@ -1285,7 +1284,6 @@
           activeBodyWeight.value = null;
           localStorage.removeItem('pl_body_weight');
           showToast('Tabella ripristinata ai valori di default.');
-          triggerDebouncedSync(1000);
         }
 
         const newExercise = reactive({ name: '', category: 'variant' });
