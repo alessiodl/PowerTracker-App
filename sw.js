@@ -1,9 +1,10 @@
-const CACHE_NAME = 'powertrack-cache-v21';
+const CACHE_NAME = 'powertrack-cache-v22';
 
 const ASSETS_LOCAL = [
   './',
   'index.html',
   'manifest.json',
+  'logo.png',
   'logo.jpg',
   'favicon.ico',
   'favicon-32x32.png',
