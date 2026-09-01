@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powertrack-cache-v22';
+const CACHE_NAME = 'powertrack-cache-v23';
 
 const ASSETS_LOCAL = [
   './',
@@ -19,22 +19,26 @@ const ASSETS_LOCAL = [
   'icons/black_for_light_theme/incolla_appunti.png',
   'icons/black_for_light_theme/livelli.png',
   'icons/black_for_light_theme/moon.png',
+  'icons/black_for_light_theme/note.png',
   'icons/black_for_light_theme/scheda.png',
   'icons/black_for_light_theme/storico.png',
   'icons/black_for_light_theme/suggerimento.png',
   'icons/black_for_light_theme/sun.png',
   'icons/black_for_light_theme/sync.png',
+  'icons/black_for_light_theme/timer.png',
   'icons/white_for_dark_theme/allenamento.png',
   'icons/white_for_dark_theme/carica_immagine.png',
   'icons/white_for_dark_theme/catalogo.png',
   'icons/white_for_dark_theme/incolla_appunti.png',
   'icons/white_for_dark_theme/livelli.png',
   'icons/white_for_dark_theme/moon.png',
+  'icons/white_for_dark_theme/note.png',
   'icons/white_for_dark_theme/scheda.png',
   'icons/white_for_dark_theme/storico.png',
   'icons/white_for_dark_theme/suggerimento.png',
   'icons/white_for_dark_theme/sun.png',
-  'icons/white_for_dark_theme/sync.png'
+  'icons/white_for_dark_theme/sync.png',
+  'icons/white_for_dark_theme/timer.png'
 ];
 
 const ASSETS_CORS = [

@@ -473,10 +473,10 @@
                         />
                         <button 
                           @click="toggleRestPicker(exIdx, sIdx)" 
-                          class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0"
+                          class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0 flex items-center justify-center"
                           title="Seleziona tempo recupero"
                         >
-                          ⏱️
+                          <img :src="getIcon('timer')" class="w-3.5 h-3.5 object-contain" alt="Recupero" />
                         </button>
                       </div>
 
@@ -500,10 +500,10 @@
                     <td class="py-1.5 pr-1 text-center">
                       <button 
                         @click="openNotesDialog(exIdx, sIdx)" 
-                        class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0 transition-all"
+                        class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0 transition-all flex items-center justify-center mx-auto"
                         title="Note serie"
                       >
-                        📝
+                        <img :src="getIcon('note')" class="w-3.5 h-3.5 object-contain" alt="Note" />
                       </button>
                     </td>
 
@@ -1004,7 +1004,8 @@
       <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-md w-full p-4 shadow-2xl flex flex-col">
         <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
           <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
-            <span>📝</span> Note Serie {{ activeNotesDialog.sIdx + 1 }}
+            <img :src="getIcon('note')" class="w-4 h-4 object-contain inline-block" alt="Note" />
+            <span>Note Serie {{ activeNotesDialog.sIdx + 1 }}</span>
           </h3>
           <button @click="closeNotesDialog" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
         </div>
