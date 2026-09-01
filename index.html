@@ -2217,10 +2217,7 @@
               lastSyncTimestamp: lastSyncTime.value || null,
               exercises: dirtyExercises,
               templates: dirtyTemplates,
-              workoutLogs: dirtyLogs,
-              userSettings: {
-                bodyWeight: userBodyWeight.value || ""
-              }
+              workoutLogs: dirtyLogs
             };
 
             const res = await fetch(webhookUrl.value.trim(), {
@@ -2327,15 +2324,6 @@
                   await db.workoutLogs.delete(dl.id);
                 } else {
                   await db.workoutLogs.update(dl.id, { _dirty: false, synced: true });
-                }
-              }
-
-              // 4. Applica Impostazioni
-              if (data.userSettings && data.userSettings.bodyWeight !== undefined) {
-                if (data.userSettings.bodyWeight) {
-                  userBodyWeight.value = data.userSettings.bodyWeight;
-                  activeBodyWeight.value = parseFloat(data.userSettings.bodyWeight);
-                  localStorage.setItem('pl_body_weight', String(data.userSettings.bodyWeight));
                 }
               }
 
