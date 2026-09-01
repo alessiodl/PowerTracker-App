@@ -148,14 +148,14 @@
 
       <!-- Row 2: Session Selector (full width) -->
       <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs font-mono shadow-sm">
-        <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent text-sky-500 dark:text-sky-400 font-bold focus:outline-none cursor-pointer text-center">
+        <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
           <option :value="1" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 1</option>
           <option :value="2" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 2</option>
         </select>
-        <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-semibold focus:outline-none cursor-pointer text-center">
+        <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
           <option v-for="w in 14" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
         </select>
-        <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent text-amber-500 dark:text-amber-400 font-bold focus:outline-none cursor-pointer text-center">
+        <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
           <option v-for="s in ['A','B','C','D']" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
         </select>
       </div>
