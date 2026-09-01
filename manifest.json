@@ -2,7 +2,7 @@
   "name": "PowerTrack Tracker",
   "short_name": "PowerTrack",
   "description": "Powerlifting PWA Tracker",
-  "start_url": ".",
+  "start_url": "app.html",
   "display": "standalone",
   "background_color": "#11131a",
   "theme_color": "#0ea5e9",

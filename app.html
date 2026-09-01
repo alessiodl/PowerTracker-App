@@ -1,0 +1,2950 @@
+<!DOCTYPE html>
+<html lang="it" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Powerlifting PWA Tracker</title>
+  <!-- PWA Configuration -->
+  <meta name="theme-color" content="#11131a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .catch(err => console.warn('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          borderRadius: {
+            DEFAULT: '2px',
+            'sm': '2px',
+            'md': '2px',
+            'lg': '2px',
+            'xl': '2px',
+            '2xl': '2px',
+            '3xl': '2px',
+            'full': '2px'
+          },
+          colors: {
+            appbg: {
+              dark: '#11131a',
+              light: '#eef2f6'
+            },
+            cardbg: {
+              dark: '#1c202c',
+              light: '#ffffff'
+            },
+            cardborder: {
+              dark: '#2c3242',
+              light: '#cbd5e1'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue 3 & Dexie.js CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    html.dark body {
+      background-color: #11131a;
+      color: #f1f5f9;
+    }
+
+    html.light body {
+      background-color: #eef2f6;
+      color: #0f172a;
+    }
+
+    input, select, textarea {
+      font-size: 13px !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    
+    html.dark ::-webkit-scrollbar-track {
+      background: #11131a;
+    }
+    html.dark ::-webkit-scrollbar-thumb {
+      background: #2c3242;
+      border-radius: 2px;
+    }
+
+    html.light ::-webkit-scrollbar-track {
+      background: #eef2f6;
+    }
+    html.light ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+
+    *:focus-visible {
+      outline: 1.5px solid #38bdf8 !important;
+      outline-offset: -1px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-black">
+
+  <div id="app" class="flex-1 flex flex-col max-w-2xl w-full mx-auto pb-24 border-x dark:border-slate-800/80 border-slate-300 dark:bg-[#11131a] bg-[#eef2f6] transition-colors">
+    
+    <header class="sticky top-0 z-30 dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-md border-b dark:border-slate-800 border-slate-300 px-3.5 py-2 flex flex-col gap-2 shadow-sm">
+
+      <!-- Row 1: Logo + Theme Toggle -->
+      <div class="flex items-center justify-between">
+        <a href="index.html" class="flex items-center space-x-2.5 hover:opacity-80 transition-opacity" title="Torna alla Home">
+          <img src="logo.png" alt="Logo" class="w-8 h-8 rounded-[22%] object-contain shadow-sm" />
+          <div>
+            <h1 class="font-extrabold text-xs uppercase tracking-widest leading-none dark:text-slate-100 text-slate-900">PowerTrack</h1>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="w-1.5 h-1.5 rounded-[1px]" :class="syncStatusDotClass"></span>
+              <span class="text-[9px] font-mono tracking-wider uppercase font-semibold" :class="syncStatusTextClass">
+                {{ syncStatusLabel }}
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Theme Toggle Button -->
+        <button @click="toggleTheme" class="p-1.5 dark:bg-[#1c202c] bg-white border dark:border-slate-700/80 border-slate-300 rounded-[2px] hover:opacity-80 transition-all shadow-sm flex items-center justify-center" title="Cambia Tema">
+          <img :src="isDarkMode ? 'icons/white_for_dark_theme/sun.png' : 'icons/black_for_light_theme/moon.png'" alt="Tema" class="w-4 h-4 object-contain" />
+        </button>
+      </div>
+
+      <!-- Row 2: Session Selector (full width) -->
+      <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs font-mono shadow-sm">
+        <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+          <option :value="1" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 1</option>
+          <option :value="2" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 2</option>
+        </select>
+        <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+          <option v-for="w in 14" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
+        </select>
+        <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+          <option v-for="s in ['A','B','C','D']" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- SESSION BANNER TITLE -->
+    <div class="dark:bg-slate-900/90 bg-slate-800 text-white py-2 px-4 text-center border-b border-slate-800 shadow-inner">
+      <h2 class="text-sm md:text-base font-black uppercase tracking-widest font-mono">
+        SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
+      </h2>
+      <p class="text-[10px] text-slate-300 font-mono tracking-wide">Programma {{ selectedProgram }}</p>
+    </div>
+
+    <main class="flex-1 px-3 py-3 space-y-4">
+
+      <!-- ================= TAB 1: SCHEDA TARGET (PLAN EDITOR) ================= -->
+      <section v-if="activeTab === 'plan'" class="space-y-4">
+        
+        <!-- Action Header Card -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3 border dark:border-slate-700/70 border-slate-300 shadow-sm space-y-2.5">
+          <div class="grid grid-cols-2 gap-2">
+            <!-- AI Image Import Button -->
+            <label class="flex-1 justify-center px-2.5 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm text-center">
+              <img v-if="!isImportingImage" :src="getIcon('carica_immagine')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span v-if="!isImportingImage">Carica immagine</span>
+              <span v-else class="animate-pulse">⏳ Analisi IA...</span>
+              <input type="file" accept="image/*" @change="handleImageUpload" class="hidden" :disabled="isImportingImage" />
+            </label>
+
+            <!-- Clipboard Paste Button -->
+            <button 
+              @click="handleClipboardPaste" 
+              :disabled="isImportingImage"
+              class="flex-1 justify-center px-2.5 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              title="Incolla immagine negli appunti (o usa Ctrl+V / Cmd+V)"
+            >
+              <img :src="getIcon('incolla_appunti')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span>Incolla Appunti</span>
+            </button>
+          </div>
+
+          <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed dark:bg-slate-950 bg-slate-100 p-2 rounded-[2px] border dark:border-slate-800 border-slate-200 flex items-start gap-1.5">
+            <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
+            <span>Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi caricare uno screenshot della tua scheda o incollarlo con Ctrl+V.</span>
+          </p>
+        </div>
+
+        <!-- Target Plan Exercises List -->
+        <div class="space-y-3">
+          <div 
+            v-for="(item, idx) in currentPlan.exercises" 
+            :key="idx" 
+            class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden"
+          >
+            <!-- Card Header -->
+            <div class="px-3 py-2 text-white flex items-center justify-between gap-2" :class="getCategoryHeaderBg(item.category)">
+              
+              <!-- Position / Reordering -->
+              <div class="flex items-center gap-1 bg-black/30 px-1.5 py-0.5 rounded-[2px] font-mono text-xs">
+                <button :disabled="idx === 0" @click="moveExerciseInPlan(idx, -1)" class="text-white/70 hover:text-white disabled:opacity-30">▲</button>
+                <span class="font-bold text-white px-1">#{{ idx + 1 }}</span>
+                <button :disabled="idx === currentPlan.exercises.length - 1" @click="moveExerciseInPlan(idx, 1)" class="text-white/70 hover:text-white disabled:opacity-30">▼</button>
+              </div>
+
+              <!-- Exercise Dropdown Switcher -->
+              <div class="flex-1">
+                <select 
+                  :value="item.exerciseName" 
+                  @change="changeExerciseInPlan(idx, $event.target.value)"
+                  class="w-full bg-black/20 text-white font-bold text-xs p-1 rounded-[2px] border border-white/20 focus:outline-none cursor-pointer"
+                >
+                  <optgroup v-for="cat in ['main', 'variant', 'accessory']" :key="cat" :label="getCategoryLabel(cat)" class="bg-slate-900 text-white">
+                    <option v-for="e in filterExercises(cat)" :key="e.id" :value="e.name">
+                      {{ e.name }}
+                    </option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-[2px] font-mono bg-black/30">
+                {{ getCategoryBadgeText(item.category) }}
+              </span>
+
+              <button @click="requestRemoveExerciseFromPlan(idx, item.exerciseName)" class="text-white/70 hover:text-white text-sm font-mono ml-1">
+                ✕
+              </button>
+            </div>
+
+            <div class="p-3 space-y-2">
+              <div>
+                <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Target / Schema Carichi</label>
+                <input 
+                  type="text" 
+                  v-model="item.target" 
+                  placeholder="es. Top set 1x140kg @8 + 3x4 @125kg (-10%)"
+                  class="w-full dark:bg-slate-950 bg-slate-50 dark:text-amber-300 text-amber-700 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div class="grid grid-cols-4 gap-2">
+                <div class="col-span-1">
+                  <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">RECUPERO</label>
+                  <input 
+                    type="text" 
+                    v-model="item.rest" 
+                    placeholder="es. 3'-4'"
+                    class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                </div>
+                <div class="col-span-3">
+                  <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Note Tecniche</label>
+                  <input 
+                    type="text" 
+                    v-model="item.notes" 
+                    placeholder="es. Fermo lungo 2 sec"
+                    class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Add Exercise to Target Plan Select -->
+        <div class="dark:bg-[#1c202c]/60 bg-white border border-dashed dark:border-slate-700 border-slate-300 rounded-[2px] p-2.5">
+          <select @change="addExerciseToPlanFromSelect($event)" class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none cursor-pointer">
+            <option value="">+ Aggiungi Esercizio alla Scheda del Giorno {{ selectedSession }}...</option>
+            <optgroup v-for="cat in ['main', 'variant', 'accessory']" :key="cat" :label="getCategoryLabel(cat)" class="bg-slate-900 text-white">
+              <option v-for="e in filterExercises(cat)" :key="e.id" :value="e.name">
+                {{ e.name }}
+              </option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="flex gap-2">
+          <button 
+            @click="savePlan" 
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+          >
+            <span>Salva Scheda</span>
+          </button>
+          <button 
+            v-if="currentPlan.exercises.length > 0"
+            @click="requestClearPlan" 
+            class="px-3.5 py-3.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center"
+            title="Svuota tutti gli esercizi della scheda"
+          >
+            <span>Svuota</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: ALLENAMENTO (LIVE WORKOUT) ================= -->
+      <section v-if="activeTab === 'workout'" class="space-y-4">
+        
+        <!-- Workout Header Meta Card -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-2 border dark:border-slate-700/70 border-slate-300 shadow-sm space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <input 
+              type="date" 
+              v-model="currentWorkout.date" 
+              @change="onWorkoutDateChange"
+              class="dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-[11px] p-1 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+            />
+
+            <div class="flex items-center gap-2">
+              <button 
+                @click="reloadWorkoutFromPlan" 
+                class="px-2 py-1 bg-sky-600/10 hover:bg-sky-600/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 rounded-[2px] text-[10px] font-mono font-bold uppercase shrink-0 flex items-center gap-1"
+                title="Ricarica gli esercizi definiti nella Scheda"
+              >
+                <img :src="getIcon('sync')" class="w-3 h-3 object-contain" alt="" />
+                <span>Ricarica Scheda</span>
+              </button>
+
+              <!-- Flag Allenamento Ripetuto -->
+              <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
+                <input 
+                  type="checkbox" 
+                  v-model="currentWorkout.isRepeated" 
+                  class="w-4 h-4 rounded-[2px] text-amber-500 focus:ring-amber-400 bg-slate-900 border-slate-700"
+                />
+                <span class="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                  Ripetuto
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Banner when no exercises are in workout -->
+        <div v-if="currentWorkout.performedExercises.length === 0" class="dark:bg-[#1c202c] bg-white rounded-[2px] p-6 border dark:border-slate-700 border-slate-300 text-center space-y-3 shadow-sm">
+          <img :src="getIcon('scheda')" class="w-8 h-8 mx-auto object-contain opacity-75" alt="" />
+          <h3 class="font-bold text-sm dark:text-slate-200 text-slate-800">Nessun esercizio pianificato per Giorno {{ selectedSession }} (W{{ selectedWeek }})</h3>
+          <p class="text-xs dark:text-slate-400 text-slate-500 max-w-sm mx-auto">
+            Configura la scheda del giorno nella tab <strong>Scheda</strong> oppure importa lo schema per iniziare l'allenamento.
+          </p>
+          <div class="flex items-center justify-center gap-2 pt-2">
+            <button 
+              @click="activeTab = 'plan'" 
+              class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] flex items-center gap-1.5"
+            >
+              <img :src="getIcon('scheda')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span>Vai alla Scheda</span>
+            </button>
+            <button 
+              v-if="currentPlan.exercises && currentPlan.exercises.length > 0"
+              @click="reloadWorkoutFromPlan" 
+              class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] flex items-center gap-1.5"
+            >
+              <img :src="getIcon('sync')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span>Carica Scheda ({{ currentPlan.exercises.length }} es.)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Performed Exercises List -->
+        <div v-if="currentWorkout.performedExercises.length > 0" class="space-y-4">
+          <div 
+            v-for="(ex, exIdx) in currentWorkout.performedExercises" 
+            :key="exIdx" 
+            class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-visible relative transition-all"
+            :class="{ 'z-30': activeRestPicker && activeRestPicker.startsWith(`${exIdx}-`) }"
+          >
+            <!-- Card Header -->
+            <div class="px-3 py-2 text-white flex items-center justify-between gap-2 rounded-t-[2px]" :class="getCategoryHeaderBg(ex.category)">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-[2px] font-mono bg-black/30">
+                  {{ getCategoryBadgeText(ex.category) }}
+                </span>
+                <h3 class="font-bold text-xs tracking-tight text-white">{{ ex.exerciseName }}</h3>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <button @click="requestRemoveExerciseFromWorkout(exIdx, ex.exerciseName)" class="text-white/70 hover:text-white text-xs font-mono">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Target Reference Info -->
+            <div class="px-3 py-1.5 dark:bg-slate-950/80 bg-slate-100 border-b dark:border-slate-800 border-slate-200 flex items-center justify-between">
+              <span class="text-[11px] font-mono text-amber-700 dark:text-amber-300 font-semibold">
+                🎯 Target: {{ ex.targetReference || 'Libero' }}
+              </span>
+            </div>
+
+            <!-- Sets Input Table with Visible Overflow -->
+            <div class="p-2 overflow-visible">
+              <table class="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                    <th class="pb-1.5 pl-1 w-8">SET</th>
+                    <th class="pb-1.5 w-24">KG (opz)</th>
+                    <th class="pb-1.5 w-24">REPS</th>
+                    <th class="pb-1.5 w-14">RPE/RIR</th>
+                    <th class="pb-1.5 w-32">REC (mm:ss)</th>
+                    <th class="pb-1.5 w-8 text-center">NOTE</th>
+                    <th class="pb-1.5 w-6 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y dark:divide-slate-800/60 divide-slate-200">
+                  <tr v-for="(set, sIdx) in ex.sets" :key="sIdx">
+                    <td class="py-1.5 pl-1 font-bold dark:text-slate-400 text-slate-600">{{ sIdx + 1 }}</td>
+                    
+                    <!-- KG Field -->
+                    <td class="py-1.5 pr-1">
+                      <input 
+                        type="number" 
+                        step="0.5" 
+                        v-model.number="set.weight" 
+                        @input="onWorkoutDataInput"
+                        placeholder="kg" 
+                        class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+                      />
+                    </td>
+
+                    <!-- REPS Field (Positive Integer) -->
+                    <td class="py-1.5 pr-1">
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="1" 
+                        v-model.number="set.reps" 
+                        @input="onRepsInput(set)"
+                        placeholder="reps" 
+                        class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-bold"
+                      />
+                    </td>
+
+                    <!-- RPE/RIR Field (Optional) -->
+                    <td class="py-1.5 pr-1">
+                      <input 
+                        type="text" 
+                        v-model="set.rpe" 
+                        @input="onWorkoutDataInput"
+                        placeholder="@8" 
+                        title="RPE o RIR percepito"
+                        class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 text-center"
+                      />
+                    </td>
+
+                    <!-- REST Field (mm:ss) with Elevated Quick Selector Widget -->
+                    <td class="py-1.5 pr-1 relative">
+                      <div class="flex items-center gap-1">
+                        <input 
+                          type="text" 
+                          v-model="set.rest" 
+                          @input="onWorkoutDataInput"
+                          placeholder="mm:ss" 
+                          class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-1.5 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+                        />
+                        <button 
+                          @click="toggleRestPicker(exIdx, sIdx)" 
+                          class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0 flex items-center justify-center"
+                          title="Seleziona tempo recupero"
+                        >
+                          <img :src="getIcon('timer')" class="w-3.5 h-3.5 object-contain" alt="Recupero" />
+                        </button>
+                      </div>
+
+                      <!-- Quick Rest Picker Floating Popover Widget -->
+                      <div 
+                        v-if="activeRestPicker === `${exIdx}-${sIdx}`" 
+                        class="absolute right-0 top-full mt-1 z-50 dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 p-2 rounded-[2px] shadow-2xl grid grid-cols-3 gap-1 w-44"
+                      >
+                        <button 
+                          v-for="time in restPresets" 
+                          :key="time" 
+                          @click="selectRestTime(exIdx, sIdx, time)" 
+                          class="px-1.5 py-1 dark:bg-slate-800 bg-slate-100 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 text-[10px] font-mono font-bold rounded-[2px] text-center"
+                        >
+                          {{ time }}
+                        </button>
+                      </div>
+                    </td>
+
+                    <!-- Notes Button -->
+                    <td class="py-1.5 pr-1 text-center">
+                      <button 
+                        @click="openNotesDialog(exIdx, sIdx)" 
+                        class="p-1 dark:bg-slate-800 bg-slate-200 dark:hover:bg-slate-700 hover:bg-slate-300 rounded-[2px] text-xs font-mono shrink-0 transition-all flex items-center justify-center mx-auto"
+                        title="Note serie"
+                      >
+                        <img :src="getIcon('note')" class="w-3.5 h-3.5 object-contain" alt="Note" />
+                      </button>
+                    </td>
+
+                    <!-- Delete Set -->
+                    <td class="py-1.5 text-center">
+                      <button @click="requestRemoveSet(exIdx, sIdx, ex.exerciseName)" class="dark:text-slate-500 text-slate-400 hover:text-red-500 text-xs">
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="mt-2 flex items-center gap-2">
+                <button 
+                  @click="addSet(exIdx)" 
+                  class="px-2.5 py-1 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 dark:text-sky-400 text-sky-700 text-xs font-mono font-bold rounded-[2px] border dark:border-slate-700 border-slate-300"
+                >
+                  + Aggiungi Serie
+                </button>
+                <button 
+                  @click="openExerciseHistory(ex.exerciseName)" 
+                  class="px-2.5 py-1 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 text-xs font-mono font-bold rounded-[2px] border dark:border-slate-700 border-slate-300"
+                >
+                  Storico
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Main Save Button Row with Clear Button -->
+        <div class="flex gap-2">
+          <button 
+            @click="saveWorkoutSession" 
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+          >
+            <span>Concludi e Sincronizza</span>
+          </button>
+          <button 
+            v-if="currentWorkout.performedExercises.length > 0"
+            @click="requestClearWorkout" 
+            class="px-3.5 py-3.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center"
+            title="Svuota tutti gli esercizi dall'allenamento"
+          >
+            <span>Svuota</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: CATALOGO ESERCIZI ================= -->
+      <section v-if="activeTab === 'catalog'" class="space-y-4">
+        
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
+          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-2">Nuovo Esercizio in Catalogo</h2>
+          <div class="flex flex-col gap-2">
+            <input 
+              type="text" 
+              v-model="newExercise.name" 
+              placeholder="Nome esercizio (es. Panca inclinata manubri)" 
+              class="dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+            />
+            <div class="flex gap-2">
+              <select v-model="newExercise.category" class="dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 flex-1 focus:outline-none cursor-pointer">
+                <option value="main">Fondamentale PL</option>
+                <option value="variant">Variante PL</option>
+                <option value="accessory">Complementare</option>
+              </select>
+              <button @click="addNewExerciseToCatalog" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px]">
+                Aggiungi
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-for="cat in ['main', 'variant', 'accessory']" :key="cat" class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 overflow-hidden shadow-sm">
+          <div class="px-3 py-2 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-between" :class="getCategoryHeaderBg(cat)">
+            <span>{{ getCategoryLabel(cat) }}</span>
+            <span class="text-[10px] bg-black/30 px-2 py-0.5 rounded-[2px] font-mono">
+              {{ filterExercises(cat).length }}
+            </span>
+          </div>
+
+          <div class="divide-y dark:divide-slate-800 divide-slate-100 p-2">
+            <div v-for="(ex, exIdx) in filterExercises(cat)" :key="ex.id" class="py-2 px-1 flex items-center justify-between text-xs gap-2">
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <div class="flex items-center gap-0.5 dark:bg-slate-900 bg-slate-100 px-1 py-0.5 rounded-[2px] border dark:border-slate-800 border-slate-300 font-mono text-[10px]">
+                  <button 
+                    :disabled="exIdx === 0" 
+                    @click="moveExerciseInCatalog(cat, exIdx, -1)" 
+                    class="dark:text-slate-300 text-slate-600 hover:text-sky-500 disabled:opacity-20 font-bold px-1"
+                    title="Sposta in alto"
+                  >▲</button>
+                  <button 
+                    :disabled="exIdx === filterExercises(cat).length - 1" 
+                    @click="moveExerciseInCatalog(cat, exIdx, 1)" 
+                    class="dark:text-slate-300 text-slate-600 hover:text-sky-500 disabled:opacity-20 font-bold px-1"
+                    title="Sposta in basso"
+                  >▼</button>
+                </div>
+                <span class="dark:text-slate-200 text-slate-800 font-medium truncate">{{ ex.name }}</span>
+              </div>
+              <button @click="requestDeleteExerciseFromCatalog(ex.id, ex.name)" class="dark:text-slate-500 text-slate-400 hover:text-red-500 font-mono text-xs px-1" title="Elimina esercizio">
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Save Catalog Button -->
+        <div class="flex gap-2 pt-1">
+          <button 
+            @click="saveCatalog" 
+            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+          >
+            <span>Salva Catalogo</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: STORICO ================= -->
+      <section v-if="activeTab === 'history'" class="space-y-4">
+        
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
+          <div>
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Storico Esercizio</h2>
+            <p class="text-xs dark:text-slate-400 text-slate-500">Consulta rapidamente lo storico di un esercizio: data, seduta, serie e carichi usati.</p>
+          </div>
+
+          <div class="space-y-2">
+            <div class="relative">
+              <input 
+                type="text" 
+                v-model="exerciseSearchQuery" 
+                placeholder="🔍 Filtra esercizio (es. Squat, Panca, Stacco...)" 
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 font-mono"
+              />
+              <button 
+                v-if="exerciseSearchQuery" 
+                @click="exerciseSearchQuery = ''" 
+                class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-200 text-xs font-bold font-mono"
+                title="Cancella filtro"
+              >✕</button>
+            </div>
+
+            <select 
+              @change="openExerciseHistoryFromSelect($event)" 
+              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 cursor-pointer font-mono"
+            >
+              <option value="">
+                {{ filteredExerciseNames.length === 0 ? 'Nessun esercizio corrispondente' : `Seleziona un esercizio (${filteredExerciseNames.length})...` }}
+              </option>
+              <option v-for="name in filteredExerciseNames" :key="name" :value="name">{{ name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Storico Allenamenti Salvati</h2>
+            <span class="text-xs dark:text-slate-400 text-slate-500 font-mono">{{ workoutLogs.length }} sedute</span>
+          </div>
+
+          <div v-if="workoutLogs.length === 0" class="text-center py-6 dark:text-slate-500 text-slate-400 text-xs font-mono">
+            Nessun allenamento ancora registrato.
+          </div>
+
+          <div class="space-y-2.5">
+            <div v-for="log in workoutLogs" :key="log.id" class="dark:bg-slate-950 bg-slate-50 p-3 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold dark:text-slate-100 text-slate-900 text-xs">{{ formatDateIT(log.date) }}</span>
+                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-mono font-bold border border-amber-500/20">
+                    P{{ log.program }}-W{{ log.week }}-{{ log.session }}
+                  </span>
+                  <span v-if="log.isRepeated" class="px-1.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-[2px] text-[9px] font-mono font-bold border border-purple-500/20">
+                    RIPETUTO
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <span v-if="log.synced" class="text-emerald-500 font-bold text-sm leading-none" title="Sincronizzato">✓</span>
+                  <span v-else class="px-1.5 py-0.5 rounded-[2px] text-[9px] font-mono font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                    Locale
+                  </span>
+                </div>
+              </div>
+
+              <div class="dark:text-slate-400 text-slate-600 text-[11px] font-mono">
+                <span v-for="(e, i) in log.performedExercises" :key="i" class="inline-block mr-2">
+                  • {{ e.exerciseName }} ({{ e.sets ? e.sets.length : 0 }} set)
+                </span>
+              </div>
+
+              <div class="pt-1 flex justify-end gap-2">
+                <button @click="editLogFromHistory(log)" class="px-2 py-0.5 bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-600/30 font-bold rounded-[2px] text-[10px] font-mono uppercase transition-all">
+                  Carica
+                </button>
+                <button @click="showLogDataModal(log)" class="px-2 py-0.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 font-bold rounded-[2px] text-[10px] font-mono uppercase transition-all">
+                  Dati
+                </button>
+                <button @click="requestDeleteLog(log.id, log.date)" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-[2px] text-[10px] font-mono uppercase shadow-sm transition-all">
+                  Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 5: SYNC & CONFIG ================= -->
+      <section v-if="activeTab === 'sync'" class="space-y-4">
+        
+        <!-- 1. Scheda Stato e Sincronizzazione Cloud -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Stato Sincronizzazione</h2>
+            <span class="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold uppercase" :class="syncStatusBadgeClass">
+              {{ syncStatusLabel }}
+            </span>
+          </div>
+
+          <div class="dark:bg-slate-950 bg-slate-50 p-2.5 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs font-mono space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="dark:text-slate-400 text-slate-500">Ultima sincronizzazione:</span>
+              <span class="font-bold dark:text-slate-200 text-slate-800">{{ lastSyncTimeFormatted }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="dark:text-slate-400 text-slate-500">Modifiche locali in sospeso:</span>
+              <span class="font-bold" :class="pendingChangesCount > 0 ? 'text-amber-500' : 'text-emerald-500'">
+                {{ pendingChangesCount }} {{ pendingChangesCount === 1 ? 'elemento' : 'elementi' }}
+              </span>
+            </div>
+          </div>
+
+          <button 
+            @click="triggerManualSync" 
+            :disabled="isSyncingCloud || !webhookUrl"
+            class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+          >
+            <span v-if="isSyncingCloud" class="animate-spin">🔄</span>
+            <span>{{ isSyncingCloud ? 'Sincronizzazione a due vie in corso...' : 'Sincronizza Ora' }}</span>
+          </button>
+
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed flex items-start gap-1.5">
+            <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
+            <span><strong>Funziona anche offline:</strong> Puoi registrare i tuoi allenamenti anche senza connessione internet. I dati restano al sicuro sul tuo dispositivo e vengono sincronizzati con il foglio Google non appena torni online.</span>
+          </p>
+        </div>
+
+        <!-- 2. Accordion Configurazione Collegamenti & Chiavi (Chiuso di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isConfigExpanded = !isConfigExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Configurazione e Chiavi</span>
+              <span v-if="webhookUrl" class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-[2px]">
+                Configurato
+              </span>
+              <span v-else class="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-[2px]">
+                Da impostare
+              </span>
+            </div>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isConfigExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
+
+          <!-- Contenuto Accordion -->
+          <div v-show="isConfigExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 space-y-4">
+            
+            <!-- Webhook Google Sheets -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">Google Sheets AppScript Webhook</label>
+                <button 
+                  v-if="!isEditingWebhook" 
+                  @click="startEditWebhook"
+                  class="text-[11px] font-mono font-bold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                >
+                  Modifica
+                </button>
+              </div>
+
+              <div v-if="!isEditingWebhook" class="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  :value="webhookUrl ? webhookUrl : 'Nessun Webhook configurato'" 
+                  readonly 
+                  class="w-full dark:bg-slate-950/60 bg-slate-100 dark:text-slate-400 text-slate-500 text-xs p-2 rounded-[2px] border dark:border-slate-800 border-slate-300 font-mono select-none cursor-not-allowed"
+                />
+              </div>
+
+              <div v-else class="space-y-2">
+                <input 
+                  type="text" 
+                  v-model="tempWebhookUrl" 
+                  placeholder="https://script.google.com/macros/s/.../exec" 
+                  class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-sky-500 border-sky-400 focus:outline-none font-mono"
+                />
+                <div class="flex gap-2">
+                  <button 
+                    @click="saveWebhookUrl" 
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all"
+                  >
+                    Salva
+                  </button>
+                  <button 
+                    @click="cancelEditWebhook" 
+                    class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-[2px] transition-all"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Gemini API Key -->
+            <div class="space-y-1.5 pt-3 border-t dark:border-slate-800 border-slate-200">
+              <div class="flex items-center justify-between">
+                <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">API Key Google Gemini (Import IA)</label>
+                <button 
+                  v-if="!isEditingGeminiKey" 
+                  @click="startEditGeminiKey"
+                  class="text-[11px] font-mono font-bold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                >
+                  Modifica
+                </button>
+              </div>
+
+              <div v-if="!isEditingGeminiKey" class="flex items-center gap-2">
+                <input 
+                  type="password" 
+                  :value="geminiApiKey ? '••••••••••••••••••••••••' : ''" 
+                  :placeholder="geminiApiKey ? '' : 'Nessuna API Key configurata'"
+                  readonly 
+                  class="w-full dark:bg-slate-950/60 bg-slate-100 dark:text-slate-400 text-slate-500 text-xs p-2 rounded-[2px] border dark:border-slate-800 border-slate-300 font-mono select-none cursor-not-allowed"
+                />
+              </div>
+
+              <div v-else class="space-y-2">
+                <input 
+                  type="password" 
+                  v-model="tempGeminiKey" 
+                  placeholder="AIzaSy..." 
+                  class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-sky-500 border-sky-400 focus:outline-none font-mono"
+                />
+                <div class="flex gap-2">
+                  <button 
+                    @click="saveGeminiApiKey" 
+                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all"
+                  >
+                    Salva
+                  </button>
+                  <button 
+                    @click="cancelEditGeminiKey" 
+                    class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-[2px] transition-all"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 3. Accordion Domande Frequenti & Guida Rapida (Chiuso di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isFaqExpanded = !isFaqExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Domande Frequenti & Guida</span>
+              <span class="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-[2px]">
+                FAQ
+              </span>
+            </div>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isFaqExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
+
+          <!-- Contenuto FAQ -->
+          <div v-show="isFaqExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 divide-y dark:divide-slate-800 divide-slate-200">
+            <div v-for="(item, idx) in faqList" :key="idx" class="py-2.5 first:pt-1 last:pb-1">
+              <button 
+                @click="toggleFaqItem(idx)"
+                class="w-full flex items-start justify-between gap-2 text-left text-xs font-bold dark:text-slate-200 text-slate-800 hover:text-sky-500 dark:hover:text-sky-400 transition-colors cursor-pointer"
+              >
+                <span>{{ item.q }}</span>
+                <span class="font-mono text-xs text-sky-500 dark:text-sky-400 font-bold shrink-0 mt-0.5">
+                  {{ expandedFaqItems[idx] ? '−' : '+' }}
+                </span>
+              </button>
+              <div 
+                v-show="expandedFaqItems[idx]" 
+                class="mt-2 text-[11px] leading-relaxed dark:text-slate-400 text-slate-600 font-sans whitespace-pre-line pl-2.5 border-l-2 dark:border-sky-500/50 border-sky-400"
+              >
+                {{ item.a }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone: Reset Applicazione -->
+        <div class="bg-rose-600/10 dark:bg-rose-950/20 border border-rose-500/30 rounded-[2px] p-3.5 shadow-sm space-y-3">
+          <div>
+            <h2 class="font-extrabold text-rose-600 dark:text-rose-400 text-xs uppercase tracking-wider mb-1">Reset Applicazione</h2>
+            <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">
+              Ripristina l'applicazione allo stato iniziale, svuotando tutte le schede, gli allenamenti registrati e lo storico.
+            </p>
+          </div>
+
+          <button 
+            @click="requestResetApp" 
+            class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+          >
+            <span>RESET</span>
+          </button>
+
+          <p class="text-[11px] text-rose-600 dark:text-rose-400 leading-relaxed flex items-start gap-1.5">
+            <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
+            <span><strong>Attenzione:</strong> Il reset agisce sul database locale. Le cancellazioni verranno inviate e applicate a Google Sheets alla prossima sincronizzazione.</span>
+          </p>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 6: LIVELLI DI PERFORMANCE ================= -->
+      <section v-if="activeTab === 'levels'" class="space-y-4">
+        
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
+          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Livelli di Performance</h2>
+          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Riferimento dei fondamentali del powerlifting. I carichi sono espressi in multipli del peso corporeo (BW) o in ripetizioni.</p>
+
+          <div class="flex items-end gap-2 mb-3">
+            <div class="flex-1">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Peso corporeo (kg)</label>
+              <input 
+                type="number" 
+                min="0" 
+                step="0.5" 
+                v-model="userBodyWeight" 
+                placeholder="es. 80" 
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+            <button 
+              @click="calculateLevels" 
+              class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+            >
+              Calcola
+            </button>
+            <button 
+              @click="resetLevels" 
+              class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+            >
+              Reset
+            </button>
+          </div>
+
+          <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
+                <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                  <th class="px-3 py-2">Esercizio</th>
+                  <th class="px-3 py-2">I livello</th>
+                  <th class="px-3 py-2">II livello</th>
+                  <th class="px-3 py-2">III livello</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+                <tr v-for="(row, rIdx) in levelTable" :key="row.name" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
+                  <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.name }}</td>
+                  <td class="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">{{ row.l1 }}</td>
+                  <td class="px-3 py-2.5 text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">{{ row.l2 }}</td>
+                  <td class="px-3 py-2.5 text-rose-600 dark:text-rose-400 font-bold whitespace-nowrap">{{ row.l3 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3 space-y-1.5">
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-emerald-300 text-emerald-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-emerald-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">I livello</span> &mdash; Il traguardo a cui chiunque si allena dovrebbe mirare.</span>
+            </div>
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-amber-300 text-amber-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-amber-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">II livello</span> &mdash; Raggiungibile da persone con genetica nella media dopo anni di allenamento costante.</span>
+            </div>
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-rose-300 text-rose-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-rose-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">III livello</span> &mdash; Richiede una specializzazione avanzata.</span>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2.5 border-t dark:border-slate-800 border-slate-200 text-[10px] font-mono dark:text-slate-500 text-slate-400">
+            Fonte: Project Invictus
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- LOG DATA DIALOG MODAL -->
+    <div v-if="selectedLogForModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-lg w-full p-4 shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
+            <span>📊</span> Schema Dati Google Sheets
+          </h3>
+          <button @click="selectedLogForModal = null" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-mono">
+          Questo è il payload JSON completo che viene inviato al Webhook Google Apps Script:
+        </p>
+        <pre class="flex-1 overflow-auto dark:bg-slate-950 bg-slate-100 dark:text-sky-300 text-sky-800 text-[11px] font-mono p-3 rounded-[2px] border dark:border-slate-800 border-slate-300 whitespace-pre-wrap select-all">{{ JSON.stringify(selectedLogForModal, null, 2) }}</pre>
+        <div class="mt-3 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
+          <button @click="copyModalJson" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold rounded-[2px]">Copia JSON</button>
+          <button @click="selectedLogForModal = null" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 text-xs font-mono font-bold rounded-[2px] dark:text-slate-200 text-slate-800">Chiudi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES DIALOG MODAL -->
+    <div v-if="activeNotesDialog" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-md w-full p-4 shadow-2xl flex flex-col">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
+            <img :src="getIcon('note')" class="w-4 h-4 object-contain inline-block" alt="Note" />
+            <span>Note Serie {{ activeNotesDialog.sIdx + 1 }}</span>
+          </h3>
+          <button @click="closeNotesDialog" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-mono">
+          {{ currentWorkout.performedExercises[activeNotesDialog.exIdx].exerciseName }}
+        </p>
+        <textarea
+          v-model="getSet(activeNotesDialog.exIdx, activeNotesDialog.sIdx).notes"
+          rows="4"
+          placeholder="Annotazioni tecniche o note per questa serie..."
+          class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 resize-y"
+        ></textarea>
+        <div class="mt-3 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
+          <button @click="closeNotesDialog" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold rounded-[2px]">Chiudi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXERCISE HISTORY DIALOG MODAL -->
+    <div v-if="showHistoryModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-2xl w-full p-4 shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
+            <span>🕘</span> Storico Esercizio
+          </h3>
+          <button @click="showHistoryModal = false" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-mono font-bold uppercase tracking-wider">
+          {{ historyExerciseName }}
+        </p>
+
+        <div v-if="exerciseHistory.length === 0" class="text-center py-6 dark:text-slate-500 text-slate-400 text-xs font-mono">
+          Nessun allenamento registrato per questo esercizio.
+        </div>
+
+        <div v-else class="flex-1 overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
+              <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                <th class="px-2 py-2">Data</th>
+                <th class="px-2 py-2">Seduta</th>
+                <th class="px-2 py-2">Serie eseguite</th>
+                <th class="px-2 py-2">Target</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+              <tr v-for="(rec, i) in exerciseHistory" :key="i">
+                <td class="px-2 py-2 dark:text-slate-200 text-slate-800 font-bold whitespace-nowrap">{{ formatDateIT(rec.date) }}</td>
+                <td class="px-2 py-2 whitespace-nowrap">
+                  <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-[2px] text-[10px] font-mono font-bold border border-amber-500/20">
+                    P{{ rec.program }}-W{{ rec.week }}-{{ rec.session }}
+                  </span>
+                </td>
+                <td class="px-2 py-2 dark:text-sky-300 text-sky-700">{{ rec.setsText }}</td>
+                <td class="px-2 py-2 dark:text-slate-400 text-slate-500">{{ rec.targetReference || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
+          <button @click="showHistoryModal = false" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 text-xs font-mono font-bold rounded-[2px] dark:text-slate-200 text-slate-800">Chiudi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRM DELETE DIALOG MODAL -->
+    <div v-if="confirmDialog" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-sm w-full p-4 shadow-2xl flex flex-col">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
+            <span>⚠️</span> {{ confirmDialog.title }}
+          </h3>
+          <button @click="cancelConfirm" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+        <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">{{ confirmDialog.message }}</p>
+        <div class="mt-4 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
+          <button @click="cancelConfirm" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 text-xs font-mono font-bold rounded-[2px] dark:text-slate-200 text-slate-800">Annulla</button>
+          <button @click="runConfirm" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-mono font-bold rounded-[2px]">Elimina</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULLSCREEN SYNCING BLOCKER MODAL -->
+    <div v-if="isSyncingCloud" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+      <div class="dark:bg-[#1c202c] bg-white p-6 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-4 max-w-xs w-full">
+        <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="space-y-1">
+          <h3 class="font-bold text-sm dark:text-slate-100 text-slate-900 tracking-tight">Sincronizzazione in corso...</h3>
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Attendere qualche secondo</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1.5 z-40 transition-colors">
+      <div class="grid grid-cols-6 gap-1 text-center">
+        
+        <!-- Tab 1: SCHEDA -->
+        <button 
+          @click="activeTab = 'plan'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'plan' ? 'text-amber-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('scheda')" class="w-5 h-5 object-contain" alt="Scheda" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SCHEDA</span>
+        </button>
+
+        <!-- Tab 2: ALLENAMENTO -->
+        <button 
+          @click="activeTab = 'workout'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'workout' ? 'text-sky-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('allenamento')" class="w-5 h-5 object-contain" alt="Allenamento" />
+          <span class="text-[8px] sm:text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENAMENTO</span>
+        </button>
+
+        <!-- Tab 3: CATALOGO -->
+        <button 
+          @click="activeTab = 'catalog'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'catalog' ? 'text-purple-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('catalogo')" class="w-5 h-5 object-contain" alt="Catalogo" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
+        </button>
+
+        <!-- Tab 4: STORICO -->
+        <button 
+          @click="activeTab = 'history'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'history' ? 'text-emerald-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('storico')" class="w-5 h-5 object-contain" alt="Storico" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">STORICO</span>
+        </button>
+
+        <!-- Tab 5: SYNC & CONFIG -->
+        <button 
+          @click="activeTab = 'sync'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'sync' ? 'text-teal-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('sync')" class="w-5 h-5 object-contain" alt="Sync" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
+        </button>
+
+        <!-- Tab 6: LIVELLI -->
+        <button 
+          @click="activeTab = 'levels'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('livelli')" class="w-5 h-5 object-contain" alt="Livelli" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
+        </button>
+
+      </div>
+    </nav>
+
+    <!-- TOAST NOTIFICATION -->
+    <div v-if="toastMessage" class="fixed top-14 left-1/2 transform -translate-x-1/2 dark:bg-slate-900 bg-slate-900 text-sky-400 border border-sky-500/40 text-xs font-mono font-bold px-3 py-1.5 rounded-[2px] shadow-2xl z-50 transition-all flex items-center gap-2">
+      <span>✨</span>
+      <span>{{ toastMessage }}</span>
+    </div>
+
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+    // UUID Generator (supporta crypto.randomUUID con fallback)
+    function generateUUID() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    const db = new Dexie('PowerTrackDB_v2');
+    db.version(1).stores({
+      exercises: 'id, name, category, updatedAt, isDeleted, _dirty',
+      templates: 'id, program, week, session, updatedAt, isDeleted, _dirty',
+      workoutLogs: 'id, date, program, week, session, updatedAt, isDeleted, _dirty'
+    });
+
+    createApp({
+      setup() {
+        const activeTab = ref('plan');
+        const isDarkMode = ref(localStorage.getItem('pl_theme') === 'dark');
+        const isImportingImage = ref(false);
+        const isSyncingCloud = ref(false);
+        const isOnline = ref(navigator.onLine);
+        const lastSyncTime = ref(localStorage.getItem('pl_last_sync_time') || '');
+        const pendingChangesCount = ref(0);
+
+        function getTodayDateStr() {
+          const d = new Date();
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        function formatDateIT(dateStr) {
+          if (!dateStr) return '';
+          const str = String(dateStr).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            const parts = str.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+          try {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+              const day = String(d.getDate()).padStart(2, '0');
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const year = d.getFullYear();
+              return `${day}/${month}/${year}`;
+            }
+          } catch (e) {}
+          return str;
+        }
+
+        function normalizeDateToYMD(dateStr) {
+          if (!dateStr) return getTodayDateStr();
+          const str = String(dateStr).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+          try {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            }
+          } catch (e) {}
+          return str;
+        }
+
+        const selectedProgram = ref(Number(localStorage.getItem('pl_selected_program')) || 1);
+        const selectedWeek = ref(Number(localStorage.getItem('pl_selected_week')) || 1);
+        const selectedSession = ref(localStorage.getItem('pl_selected_session') || 'A');
+
+        const exercises = ref([]);
+        const currentPlan = reactive({
+          id: '',
+          program: selectedProgram.value,
+          week: selectedWeek.value,
+          session: selectedSession.value,
+          exercises: []
+        });
+
+        const currentWorkout = reactive({
+          id: '',
+          date: getTodayDateStr(),
+          program: selectedProgram.value,
+          week: selectedWeek.value,
+          session: selectedSession.value,
+          isRepeated: false,
+          performedExercises: []
+        });
+
+        const workoutLogs = ref([]);
+        const webhookUrl = ref(localStorage.getItem('pl_webhook_url') || '');
+        const geminiApiKey = ref(localStorage.getItem('pl_gemini_key') || '');
+        
+        // Stato per accordion impostazioni avanzate e modalità sola lettura
+        const isConfigExpanded = ref(false);
+        const isEditingWebhook = ref(!webhookUrl.value);
+        const tempWebhookUrl = ref(webhookUrl.value);
+        const isEditingGeminiKey = ref(!geminiApiKey.value);
+        const tempGeminiKey = ref(geminiApiKey.value);
+
+        // Debounce timer per auto-sync
+        let syncDebounceTimer = null;
+        function triggerDebouncedSync(delay = 2000) {
+          updatePendingCount();
+          if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+          syncDebounceTimer = setTimeout(() => {
+            syncWithCloud({ silent: true });
+          }, delay);
+        }
+
+        // Formattazione data ultima sync
+        const lastSyncTimeFormatted = computed(() => {
+          if (!lastSyncTime.value) return 'Mai sincronizzato';
+          try {
+            const d = new Date(lastSyncTime.value);
+            return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                   d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          } catch (e) {
+            return lastSyncTime.value;
+          }
+        });
+
+        // Stato dinamico di sincronizzazione per UI
+        const syncStatusLabel = computed(() => {
+          if (isSyncingCloud.value) return 'Sincronizzazione...';
+          if (!isOnline.value) return 'Offline';
+          if (!webhookUrl.value) return 'Pronto (Locale)';
+          if (pendingChangesCount.value > 0) return `${pendingChangesCount.value} in attesa`;
+          return 'Sincronizzato';
+        });
+
+        const syncStatusDotClass = computed(() => {
+          if (isSyncingCloud.value) return 'bg-sky-400 animate-spin';
+          if (!isOnline.value) return 'bg-slate-400';
+          if (!webhookUrl.value) return 'bg-amber-400';
+          if (pendingChangesCount.value > 0) return 'bg-amber-400 animate-pulse';
+          return 'bg-emerald-400';
+        });
+
+        const syncStatusTextClass = computed(() => {
+          if (isSyncingCloud.value) return 'text-sky-500 dark:text-sky-400';
+          if (!isOnline.value) return 'text-slate-400';
+          if (!webhookUrl.value) return 'text-amber-500 dark:text-amber-400';
+          if (pendingChangesCount.value > 0) return 'text-amber-500 dark:text-amber-400';
+          return 'text-emerald-500 dark:text-emerald-400';
+        });
+
+        const syncStatusBadgeClass = computed(() => {
+          if (isSyncingCloud.value) return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30';
+          if (!isOnline.value) return 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30';
+          if (!webhookUrl.value) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+          if (pendingChangesCount.value > 0) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+          return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        });
+
+        // Conteggio modifiche locali non sincronizzate
+        async function updatePendingCount() {
+          try {
+            const dirtyEx = await db.exercises.filter(e => !!e._dirty).count();
+            const dirtyTpl = await db.templates.filter(t => !!t._dirty).count();
+            const dirtyLogs = await db.workoutLogs.filter(l => !!l._dirty).count();
+            pendingChangesCount.value = dirtyEx + dirtyTpl + dirtyLogs;
+          } catch (e) {
+            console.warn('Errore conteggio pending:', e);
+          }
+        }
+
+        // Livelli di Performance - Calcolatore BW
+        const userBodyWeight = ref(localStorage.getItem('pl_body_weight') || '');
+        const activeBodyWeight = ref(userBodyWeight.value ? parseFloat(userBodyWeight.value) : null);
+        const levelRows = [
+          { name: 'Panca', type: 'bw', l1: 1.2, l2: 1.5, l3: 1.8 },
+          { name: 'Trazioni', type: 'reps', l1: 10, l2: 20, l3: 30 },
+          { name: 'Dip', type: 'reps', l1: 20, l2: 35, l3: 50 },
+          { name: 'Stacco', type: 'bw', l1: 2, l2: 2.5, l3: 3 },
+          { name: 'Squat', type: 'bw', l1: 1.6, l2: 2, l3: 2.4 },
+          { name: 'Lento', type: 'bw', l1: 0.8, l2: 1, l3: 1.2 }
+        ];
+
+        function formatKg(n) {
+          const rounded = Math.round(n * 10) / 10;
+          return (Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',')) + ' kg';
+        }
+
+        const levelTable = computed(() => {
+          const bw = activeBodyWeight.value;
+          return levelRows.map((row, idx) => {
+            const vals = [row.l1, row.l2, row.l3];
+            const cells = row.type === 'bw'
+              ? vals.map(v => bw > 0 ? formatKg(v * bw) : `${String(v).replace('.', ',')}x BW`)
+              : vals.map(v => `${v} reps`);
+            return { name: row.name, l1: cells[0], l2: cells[1], l3: cells[2], alt: idx % 2 === 0 };
+          });
+        });
+
+        function calculateLevels() {
+          const n = parseFloat(String(userBodyWeight.value).replace(',', '.'));
+          if (!n || n <= 0) {
+            activeBodyWeight.value = null;
+            localStorage.removeItem('pl_body_weight');
+            showToast('Inserisci un peso corporeo valido.');
+            return;
+          }
+          activeBodyWeight.value = n;
+          localStorage.setItem('pl_body_weight', String(n));
+          showToast('Carichi calcolati in base al peso corporeo!');
+        }
+
+        function resetLevels() {
+          userBodyWeight.value = '';
+          activeBodyWeight.value = null;
+          localStorage.removeItem('pl_body_weight');
+          showToast('Tabella ripristinata ai valori di default.');
+        }
+
+        const newExercise = reactive({ name: '', category: 'variant' });
+        const toastMessage = ref('');
+        const selectedLogForModal = ref(null);
+
+        // Selector Widget Recuperi
+        const activeRestPicker = ref(null);
+        const restPresets = ['0:30', '1:00', '1:30', '2:00', '2:30', '3:00', '3:30', '4:00', '5:00'];
+
+        function toggleRestPicker(exIdx, sIdx) {
+          const key = `${exIdx}-${sIdx}`;
+          activeRestPicker.value = activeRestPicker.value === key ? null : key;
+        }
+
+        function selectRestTime(exIdx, sIdx, time) {
+          currentWorkout.performedExercises[exIdx].sets[sIdx].rest = time;
+          activeRestPicker.value = null;
+        }
+
+        // Dialog Note Serie
+        const activeNotesDialog = ref(null);
+
+        // Dialog Storico Esercizio
+        const showHistoryModal = ref(false);
+        const historyExerciseName = ref('');
+        const exerciseHistory = ref([]);
+
+        // Dialog Conferma Eliminazione
+        const confirmDialog = ref(null);
+
+        function askConfirm(title, message, action) {
+          confirmDialog.value = { title, message, action };
+        }
+
+        function cancelConfirm() {
+          confirmDialog.value = null;
+        }
+
+        function runConfirm() {
+          if (confirmDialog.value && confirmDialog.value.action) {
+            confirmDialog.value.action();
+          }
+          confirmDialog.value = null;
+        }
+
+        const allExerciseNames = computed(() => {
+          const names = new Set();
+          exercises.value.forEach(e => { if (e.name && !e.isDeleted) names.add(e.name); });
+          workoutLogs.value.forEach(l => {
+            if (!l.isDeleted) {
+              (l.performedExercises || []).forEach(ex => {
+                if (ex.exerciseName) names.add(ex.exerciseName);
+              });
+            }
+          });
+          return Array.from(names).sort((a, b) => a.localeCompare(b));
+        });
+
+        const exerciseSearchQuery = ref('');
+        const filteredExerciseNames = computed(() => {
+          const query = exerciseSearchQuery.value.trim().toLowerCase();
+          if (!query) return allExerciseNames.value;
+          return allExerciseNames.value.filter(name => name.toLowerCase().includes(query));
+        });
+
+        function openNotesDialog(exIdx, sIdx) {
+          activeNotesDialog.value = { exIdx, sIdx };
+        }
+
+        function closeNotesDialog() {
+          activeNotesDialog.value = null;
+        }
+
+        function getSet(exIdx, sIdx) {
+          const ex = currentWorkout.performedExercises[exIdx];
+          if (!ex || !ex.sets) return null;
+          return ex.sets[sIdx] || null;
+        }
+
+        function applyTheme() {
+          if (isDarkMode.value) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            localStorage.setItem('pl_theme', 'dark');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('pl_theme', 'light');
+          }
+        }
+
+        function toggleTheme() {
+          isDarkMode.value = !isDarkMode.value;
+          applyTheme();
+        }
+
+        function showToast(msg) {
+          toastMessage.value = msg;
+          setTimeout(() => { toastMessage.value = ''; }, 2500);
+        }
+
+        // Migrazione trasparente dal vecchio DB 'PowerliftingDB' (v1) al nuovo 'PowerTrackDB_v2'
+        async function migrateDataIfNeeded() {
+          try {
+            const exists = await Dexie.exists('PowerliftingDB');
+            if (exists) {
+              const oldDb = new Dexie('PowerliftingDB');
+              oldDb.version(1).stores({
+                exercises: '++id, name, category',
+                templates: '[program+week+session], program, week, session',
+                workoutLogs: '++id, date, [program+week+session], synced'
+              });
+              await oldDb.open();
+              const oldExercises = await oldDb.exercises.toArray();
+              const oldTemplates = await oldDb.templates.toArray();
+              const oldLogs = await oldDb.workoutLogs.toArray();
+
+              const now = new Date().toISOString();
+              if (oldExercises && oldExercises.length > 0) {
+                for (const ex of oldExercises) {
+                  await db.exercises.put({
+                    id: generateUUID(),
+                    name: ex.name,
+                    category: ex.category || 'accessory',
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
+                  });
+                }
+              }
+              if (oldTemplates && oldTemplates.length > 0) {
+                for (const t of oldTemplates) {
+                  await db.templates.put({
+                    id: `p${t.program}_w${t.week}_s${t.session}`,
+                    program: t.program,
+                    week: t.week,
+                    session: t.session,
+                    exercises: t.exercises || [],
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
+                  });
+                }
+              }
+              if (oldLogs && oldLogs.length > 0) {
+                for (const log of oldLogs) {
+                  await db.workoutLogs.put({
+                    id: generateUUID(),
+                    date: log.date,
+                    program: log.program,
+                    week: log.week,
+                    session: log.session,
+                    isRepeated: !!log.isRepeated,
+                    performedExercises: log.performedExercises || [],
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true,
+                    synced: false
+                  });
+                }
+              }
+              oldDb.close();
+              await Dexie.delete('PowerliftingDB');
+            }
+          } catch (e) {
+            console.warn('Migrazione da vecchio database completata o non necessaria:', e);
+            try { await Dexie.delete('PowerliftingDB'); } catch (err) {}
+          }
+        }
+
+        onMounted(async () => {
+          applyTheme();
+          await migrateDataIfNeeded();
+
+          const isInitialized = localStorage.getItem('pl_initialized') === 'true';
+          if (!isInitialized) {
+            await seedDefaultExercises();
+            await seedDefaultPlanIfEmpty();
+            localStorage.setItem('pl_initialized', 'true');
+          }
+
+          await loadCatalog();
+          await deduplicateExercises();
+          await loadSelectedPlanAndWorkout();
+          await loadLogs();
+          await updatePendingCount();
+
+          // Listener stato connessione di rete (solo indicatore visivo UI)
+          window.addEventListener('online', () => {
+            isOnline.value = true;
+          });
+          window.addEventListener('offline', () => {
+            isOnline.value = false;
+          });
+
+          // Global paste event listener per incollare screenshot direttamente negli appunti
+          window.addEventListener('paste', async (e) => {
+            if (activeTab.value !== 'plan' || isImportingImage.value) return;
+            const items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (const item of items) {
+              if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                  e.preventDefault();
+                  await processImageFile(file);
+                  break;
+                }
+              }
+            }
+          });
+        });
+
+        async function seedDefaultExercises() {
+          const count = await db.exercises.count();
+          if (count === 0) {
+            const now = new Date().toISOString();
+            await db.exercises.bulkAdd([
+              { id: generateUUID(), name: "Panca piana", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Squat", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Stacco da terra", category: "main", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca board", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Squat fermo 2\"", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Pin Squat", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca fermo 3\"", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Panca presa stretta", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Stacco al ginocchio", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Deficit Deadlift", category: "variant", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Lat machine presa prona", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Rematore con manubri", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Bicipiti con Bilanciere EZ", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Trazioni zavorrate", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Dip parallele", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true },
+              { id: generateUUID(), name: "Military Press", category: "accessory", updatedAt: now, isDeleted: false, _dirty: true }
+            ]);
+          }
+        }
+
+        async function seedDefaultPlanIfEmpty() {
+          const count = await db.templates.count();
+          if (count === 0) {
+            const now = new Date().toISOString();
+            await db.templates.put({
+              id: "p1_w1_sA",
+              program: 1,
+              week: 1,
+              session: 'A',
+              exercises: [
+                { exerciseName: "Panca piana", category: "main", target: "88kg 3/4 x 6", rest: "3'-4'", notes: "Fermo netto al petto" },
+                { exerciseName: "Panca board", category: "variant", target: "77kg 3/6 x 3", rest: "3'", notes: "Presa stretta e board 4/6cm" },
+                { exerciseName: "Lat machine presa prona", category: "accessory", target: "10,8,6,6 x 1", rest: "2'", notes: "Tecnica piramidale" },
+                { exerciseName: "Rematore con manubri", category: "accessory", target: "8 x 3", rest: "2'", notes: "Fermo 2 sec picco tirata" },
+                { exerciseName: "Bicipiti con Bilanciere EZ", category: "accessory", target: "3 e 3 x 4 (10 RM)", rest: "2'", notes: "3 reps isometria 3s + 3 reps norm" }
+              ],
+              updatedAt: now,
+              isDeleted: false,
+              _dirty: true
+            });
+          }
+        }
+
+        async function loadCatalog() {
+          const list = await db.exercises.toArray();
+          exercises.value = list
+            .filter(e => !e.isDeleted)
+            .sort((a, b) => {
+              const orderA = typeof a.order === 'number' ? a.order : 9999;
+              const orderB = typeof b.order === 'number' ? b.order : 9999;
+              if (orderA !== orderB) return orderA - orderB;
+              return String(a.name).localeCompare(String(b.name));
+            });
+        }
+
+        async function deduplicateExercises() {
+          const allEx = await db.exercises.toArray();
+          const activeEx = allEx.filter(e => !e.isDeleted);
+          const seen = new Map();
+          let duplicatesFound = false;
+
+          for (const ex of activeEx) {
+            const key = String(ex.name || '').trim().toLowerCase();
+            if (!key) continue;
+            if (!seen.has(key)) {
+              seen.set(key, ex);
+            } else {
+              duplicatesFound = true;
+              const primary = seen.get(key);
+              const timePrimary = primary.updatedAt ? new Date(primary.updatedAt).getTime() : 0;
+              const timeCurrent = ex.updatedAt ? new Date(ex.updatedAt).getTime() : 0;
+              
+              let toDelete = ex;
+              if (timeCurrent > timePrimary) {
+                toDelete = primary;
+                seen.set(key, ex);
+              }
+              
+              await db.exercises.put({
+                ...toDelete,
+                isDeleted: true,
+                updatedAt: new Date().toISOString(),
+                _dirty: true
+              });
+            }
+          }
+
+          if (duplicatesFound) {
+            await loadCatalog();
+            triggerDebouncedSync(1000);
+          }
+        }
+
+        let isInternalLoading = false;
+        let autoSaveDebounceTimer = null;
+
+        async function autoSaveWorkoutLocally() {
+          if (isInternalLoading) return;
+          if (!currentWorkout.performedExercises || currentWorkout.performedExercises.length === 0) return;
+          
+          const hasAnyData = currentWorkout.performedExercises.some(ex => 
+            (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+          );
+          if (!hasAnyData) return;
+
+          const now = new Date().toISOString();
+          const logId = currentWorkout.id || generateUUID();
+          currentWorkout.id = logId;
+
+          const logData = {
+            id: logId,
+            date: currentWorkout.date,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            isRepeated: !!currentWorkout.isRepeated,
+            performedExercises: JSON.parse(JSON.stringify(currentWorkout.performedExercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true,
+            synced: false
+          };
+
+          await db.workoutLogs.put(logData);
+          await loadLogs();
+          await updatePendingCount();
+        }
+
+        function onWorkoutDataInput() {
+          if (autoSaveDebounceTimer) clearTimeout(autoSaveDebounceTimer);
+          autoSaveDebounceTimer = setTimeout(() => {
+            autoSaveWorkoutLocally();
+          }, 600);
+        }
+
+        function onRepsInput(set) {
+          set.reps = set.reps !== null && set.reps !== '' ? Math.max(0, Math.floor(set.reps)) : null;
+          onWorkoutDataInput();
+        }
+
+        function reloadWorkoutFromPlan() {
+          if (!currentPlan.exercises || currentPlan.exercises.length === 0) {
+            showToast('Nessun esercizio pianificato nella Scheda Target!');
+            return;
+          }
+          currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+            exerciseName: item.exerciseName,
+            category: item.category,
+            targetReference: item.target,
+            sets: [
+              { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
+            ]
+          }));
+          showToast(`✓ Caricati ${currentPlan.exercises.length} esercizi dalla Scheda Target!`);
+        }
+
+        async function loadSelectedPlanAndWorkout(preserveDate = false) {
+          isInternalLoading = true;
+          try {
+            const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+            const plan = await db.templates.get(tId);
+
+            if (plan && !plan.isDeleted && Array.isArray(plan.exercises) && plan.exercises.length > 0) {
+              currentPlan.id = plan.id;
+              currentPlan.program = plan.program;
+              currentPlan.week = plan.week;
+              currentPlan.session = plan.session;
+              currentPlan.exercises = JSON.parse(JSON.stringify(plan.exercises));
+            } else {
+              currentPlan.id = tId;
+              currentPlan.program = selectedProgram.value;
+              currentPlan.week = selectedWeek.value;
+              currentPlan.session = selectedSession.value;
+              currentPlan.exercises = [];
+            }
+
+            const todayStr = getTodayDateStr();
+            const targetDate = preserveDate && currentWorkout.date ? currentWorkout.date : todayStr;
+
+            // Cerca tutti i log registrati per questa specifica seduta
+            const allLogs = await db.workoutLogs.toArray();
+            const matchingLogs = allLogs.filter(l => 
+              !l.isDeleted &&
+              l.program === selectedProgram.value && 
+              l.week === selectedWeek.value && 
+              l.session === selectedSession.value
+            ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+            // 1. Cerca per data target specifica
+            let existingLog = matchingLogs.find(l => l.date === targetDate);
+            
+            // 2. Se non esiste un log per la data target odierna, prendi l'ultimo log registrato per questa seduta se ha dati reali
+            if (!existingLog && matchingLogs.length > 0 && !preserveDate) {
+              const latestLog = matchingLogs[0];
+              const hasData = (latestLog.performedExercises || []).some(ex => 
+                (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+              );
+              if (hasData) {
+                existingLog = latestLog;
+              }
+            }
+
+            // Controlla se il log trovato contiene dati reali
+            const hasRealLogData = existingLog && (existingLog.performedExercises || []).some(ex => 
+              (ex.sets || []).some(s => (s.weight !== null && s.weight !== '') || (s.reps !== null && s.reps !== '') || (s.rpe && s.rpe.trim()) || (s.notes && s.notes.trim()))
+            );
+
+            if (existingLog && hasRealLogData) {
+              currentWorkout.id = existingLog.id;
+              currentWorkout.date = existingLog.date;
+              currentWorkout.program = existingLog.program;
+              currentWorkout.week = existingLog.week;
+              currentWorkout.session = existingLog.session;
+              currentWorkout.isRepeated = !!existingLog.isRepeated;
+              currentWorkout.performedExercises = JSON.parse(JSON.stringify(existingLog.performedExercises || []));
+            } else {
+              currentWorkout.id = generateUUID();
+              currentWorkout.date = targetDate;
+              currentWorkout.program = selectedProgram.value;
+              currentWorkout.week = selectedWeek.value;
+              currentWorkout.session = selectedSession.value;
+              currentWorkout.isRepeated = false;
+              currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+                exerciseName: item.exerciseName,
+                category: item.category,
+                targetReference: item.target,
+                sets: [
+                  { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
+                ]
+              }));
+            }
+          } finally {
+            isInternalLoading = false;
+          }
+        }
+
+        async function onFilterChange() {
+          localStorage.setItem('pl_selected_program', String(selectedProgram.value));
+          localStorage.setItem('pl_selected_week', String(selectedWeek.value));
+          localStorage.setItem('pl_selected_session', String(selectedSession.value));
+          await loadSelectedPlanAndWorkout(false);
+        }
+
+        async function onWorkoutDateChange() {
+          await loadSelectedPlanAndWorkout(true);
+        }
+
+        function editLogFromHistory(log) {
+          selectedProgram.value = log.program;
+          selectedWeek.value = log.week;
+          selectedSession.value = log.session;
+          localStorage.setItem('pl_selected_program', String(log.program));
+          localStorage.setItem('pl_selected_week', String(log.week));
+          localStorage.setItem('pl_selected_session', String(log.session));
+          currentWorkout.id = log.id;
+          currentWorkout.date = log.date;
+          currentWorkout.program = log.program;
+          currentWorkout.week = log.week;
+          currentWorkout.session = log.session;
+          currentWorkout.isRepeated = !!log.isRepeated;
+          currentWorkout.performedExercises = JSON.parse(JSON.stringify(log.performedExercises || []));
+          activeTab.value = 'workout';
+          showToast(`Caricato allenamento del ${log.date}!`);
+        }
+
+        function addSet(exIdx) {
+          const ex = currentWorkout.performedExercises[exIdx];
+          const prevSet = ex.sets[ex.sets.length - 1];
+          ex.sets.push({
+            setNum: ex.sets.length + 1,
+            weight: prevSet ? prevSet.weight : null,
+            reps: prevSet ? prevSet.reps : null,
+            rest: prevSet ? (prevSet.rest || '') : '',
+            rpe: prevSet ? prevSet.rpe : '',
+            notes: ''
+          });
+          autoSaveWorkoutLocally();
+        }
+
+        function removeSet(exIdx, sIdx) {
+          currentWorkout.performedExercises[exIdx].sets.splice(sIdx, 1);
+          autoSaveWorkoutLocally();
+        }
+
+        function requestRemoveSet(exIdx, sIdx, exName) {
+          askConfirm(
+            'Elimina Serie',
+            `Vuoi davvero eliminare la serie ${sIdx + 1} di "${exName}"? L'operazione non può essere annullata.`,
+            () => removeSet(exIdx, sIdx)
+          );
+        }
+
+        function removeExerciseFromWorkout(exIdx) {
+          currentWorkout.performedExercises.splice(exIdx, 1);
+        }
+
+        function requestRemoveExerciseFromWorkout(exIdx, exName) {
+          askConfirm(
+            'Rimuovi Esercizio',
+            `Vuoi davvero rimuovere "${exName}" dall'allenamento? L'operazione non può essere annullata.`,
+            () => removeExerciseFromWorkout(exIdx)
+          );
+        }
+
+        async function clearWorkout() {
+          const now = new Date().toISOString();
+          const allLogs = await db.workoutLogs.toArray();
+          const existingLog = allLogs.find(l => 
+            !l.isDeleted &&
+            l.date === currentWorkout.date && 
+            l.program === selectedProgram.value && 
+            l.week === selectedWeek.value && 
+            l.session === selectedSession.value
+          );
+
+          if (existingLog) {
+            await db.workoutLogs.put({
+              ...existingLog,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          } else if (currentWorkout.id) {
+            await db.workoutLogs.put({
+              id: currentWorkout.id,
+              date: currentWorkout.date,
+              program: selectedProgram.value,
+              week: selectedWeek.value,
+              session: selectedSession.value,
+              isRepeated: false,
+              performedExercises: [],
+              updatedAt: now,
+              isDeleted: true,
+              _dirty: true,
+              synced: false
+            });
+          }
+
+          currentWorkout.performedExercises = [];
+          currentWorkout.id = generateUUID();
+          await loadLogs();
+          showToast('Allenamento svuotato ed eliminato!');
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          }
+        }
+
+        function requestClearWorkout() {
+          askConfirm(
+            'Svuota Allenamento',
+            `Vuoi davvero rimuovere tutti gli esercizi da questo allenamento e cancellare la sessione registrata?`,
+            async () => { await clearWorkout(); }
+          );
+        }
+
+        function openExerciseHistory(exName) {
+          const name = String(exName || '').toLowerCase();
+          const records = [];
+
+          for (const log of workoutLogs.value) {
+            if (log.isDeleted) continue;
+            const matches = (log.performedExercises || []).filter(ex => 
+              String(ex.exerciseName || '').toLowerCase() === name
+            );
+            if (matches.length === 0) continue;
+
+            for (const ex of matches) {
+              const sets = (ex.sets || []).filter(s => s.weight > 0 && s.reps > 0);
+              if (sets.length === 0) {
+                records.push({
+                  date: log.date,
+                  program: log.program,
+                  week: log.week,
+                  session: log.session,
+                  setsText: '—',
+                  targetReference: ex.targetReference
+                });
+                continue;
+              }
+
+              const setsText = sets.map(s => {
+                const rpe = s.rpe ? `@${s.rpe}` : '';
+                return `${s.weight}kg×${s.reps}${rpe}`;
+              }).join(', ');
+              records.push({
+                date: log.date,
+                program: log.program,
+                week: log.week,
+                session: log.session,
+                setsText,
+                targetReference: ex.targetReference
+              });
+            }
+          }
+
+          records.sort((a, b) => {
+            const timeA = new Date(a.date).getTime() || 0;
+            const timeB = new Date(b.date).getTime() || 0;
+            if (timeB !== timeA) return timeB - timeA;
+            return String(b.program).localeCompare(String(a.program)) || 
+                   String(b.week).localeCompare(String(a.week)) ||
+                   String(b.session).localeCompare(String(a.session));
+          });
+
+          historyExerciseName.value = exName;
+          exerciseHistory.value = records;
+          showHistoryModal.value = true;
+        }
+
+        function openExerciseHistoryFromSelect(event) {
+          const name = event.target.value;
+          event.target.value = '';
+          if (name) openExerciseHistory(name);
+        }
+
+        async function saveWorkoutSession() {
+          const now = new Date().toISOString();
+          const logId = currentWorkout.id || generateUUID();
+          currentWorkout.id = logId;
+
+          const logData = {
+            id: logId,
+            date: currentWorkout.date,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            isRepeated: !!currentWorkout.isRepeated,
+            performedExercises: JSON.parse(JSON.stringify(currentWorkout.performedExercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true,
+            synced: false
+          };
+
+          await db.workoutLogs.put(logData);
+          await loadLogs();
+          await updatePendingCount();
+
+          if (webhookUrl.value && navigator.onLine) {
+            showToast('✓ Allenamento salvato! Sincronizzazione Cloud in corso...');
+            syncWithCloud({ silent: false });
+          } else {
+            showToast('✓ Allenamento salvato al sicuro in locale sul dispositivo!');
+          }
+        }
+
+        function addExerciseToPlanFromSelect(event) {
+          const name = event.target.value;
+          if (!name) return;
+          const found = exercises.value.find(e => e.name === name);
+          currentPlan.exercises.push({
+            exerciseName: name,
+            category: found ? found.category : 'accessory',
+            target: '',
+            rest: '',
+            notes: ''
+          });
+          event.target.value = '';
+        }
+
+        function changeExerciseInPlan(idx, newName) {
+          const found = exercises.value.find(e => e.name === newName);
+          if (found) {
+            currentPlan.exercises[idx].exerciseName = found.name;
+            currentPlan.exercises[idx].category = found.category;
+          }
+        }
+
+        function moveExerciseInPlan(idx, dir) {
+          const newIdx = idx + dir;
+          if (newIdx < 0 || newIdx >= currentPlan.exercises.length) return;
+          const item = currentPlan.exercises.splice(idx, 1)[0];
+          currentPlan.exercises.splice(newIdx, 0, item);
+        }
+
+        function removeExerciseFromPlan(idx) {
+          currentPlan.exercises.splice(idx, 1);
+        }
+
+        function requestRemoveExerciseFromPlan(idx, exName) {
+          askConfirm(
+            'Rimuovi Esercizio',
+            `Vuoi davvero rimuovere "${exName}" dalla scheda del giorno? L'operazione non può essere annullata.`,
+            () => removeExerciseFromPlan(idx)
+          );
+        }
+
+        async function clearPlan() {
+          const now = new Date().toISOString();
+          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+          currentPlan.exercises = [];
+          
+          await db.templates.put({
+            id: tId,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            exercises: [],
+            updatedAt: now,
+            isDeleted: true,
+            _dirty: true
+          });
+
+          currentWorkout.performedExercises = [];
+
+          showToast('Scheda svuotata!');
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          }
+        }
+
+        function requestClearPlan() {
+          askConfirm(
+            'Svuota Scheda Target',
+            `Vuoi davvero rimuovere tutti gli esercizi dalla scheda del Giorno ${selectedSession.value} (W${selectedWeek.value})?`,
+            async () => { await clearPlan(); }
+          );
+        }
+
+        async function savePlan() {
+          const now = new Date().toISOString();
+          const tId = `p${selectedProgram.value}_w${selectedWeek.value}_s${selectedSession.value}`;
+          
+          // 1. Salva ESCLUSIVAMENTE nella tabella Schede (Templates)
+          await db.templates.put({
+            id: tId,
+            program: selectedProgram.value,
+            week: selectedWeek.value,
+            session: selectedSession.value,
+            exercises: JSON.parse(JSON.stringify(currentPlan.exercises)),
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true
+          });
+
+          // 2. Prepara la schermata Allenamento solo a video (in memoria reattiva)
+          currentWorkout.program = selectedProgram.value;
+          currentWorkout.week = selectedWeek.value;
+          currentWorkout.session = selectedSession.value;
+          currentWorkout.performedExercises = currentPlan.exercises.map(item => ({
+            exerciseName: item.exerciseName,
+            category: item.category,
+            targetReference: item.target,
+            sets: [
+              { setNum: 1, weight: null, reps: null, rest: item.rest || '', rpe: '', notes: item.notes || '' }
+            ]
+          }));
+
+          showToast(`✓ Scheda Giorno ${selectedSession.value} salvata nel foglio Schede!`);
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          } else {
+            triggerDebouncedSync(500);
+          }
+        }
+
+        async function addNewExerciseToCatalog() {
+          const trimmedName = newExercise.name.trim();
+          if (!trimmedName) return;
+
+          // Controllo antiduplicati (case-insensitive)
+          const lowerName = trimmedName.toLowerCase();
+          const allEx = await db.exercises.toArray();
+          const existing = allEx.find(e => !e.isDeleted && e.name.trim().toLowerCase() === lowerName);
+          if (existing) {
+            showToast(`"${existing.name}" è già presente nel catalogo!`);
+            return;
+          }
+
+          const deletedExisting = allEx.find(e => e.isDeleted && e.name.trim().toLowerCase() === lowerName);
+          const now = new Date().toISOString();
+          const id = deletedExisting ? deletedExisting.id : generateUUID();
+          const currentCatCount = filterExercises(newExercise.category).length;
+
+          await db.exercises.put({
+            id: id,
+            name: trimmedName,
+            category: newExercise.category,
+            order: currentCatCount,
+            updatedAt: now,
+            isDeleted: false,
+            _dirty: true
+          });
+          newExercise.name = '';
+          await loadCatalog();
+          await updatePendingCount();
+          showToast('Esercizio aggiunto al catalogo locale');
+        }
+
+        async function moveExerciseInCatalog(category, idx, dir) {
+          const list = [...filterExercises(category)];
+          const targetIdx = idx + dir;
+          if (targetIdx < 0 || targetIdx >= list.length) return;
+
+          const temp = list[idx];
+          list[idx] = list[targetIdx];
+          list[targetIdx] = temp;
+
+          const now = new Date().toISOString();
+          for (let i = 0; i < list.length; i++) {
+            list[i].order = i;
+            await db.exercises.update(list[i].id, {
+              order: i,
+              updatedAt: now,
+              _dirty: true
+            });
+          }
+
+          await loadCatalog();
+          await updatePendingCount();
+        }
+
+        async function saveCatalog() {
+          const now = new Date().toISOString();
+          for (const cat of ['main', 'variant', 'accessory']) {
+            const list = filterExercises(cat);
+            for (let i = 0; i < list.length; i++) {
+              await db.exercises.update(list[i].id, {
+                order: i,
+                updatedAt: now,
+                _dirty: true
+              });
+            }
+          }
+          await loadCatalog();
+          await updatePendingCount();
+          showToast('✓ Catalogo salvato!');
+        }
+
+        async function deleteExerciseFromCatalog(id) {
+          const ex = await db.exercises.get(id);
+          if (ex) {
+            await db.exercises.put({
+              ...ex,
+              isDeleted: true,
+              updatedAt: new Date().toISOString(),
+              _dirty: true
+            });
+            await loadCatalog();
+            await updatePendingCount();
+            showToast('Esercizio rimosso dal catalogo');
+          }
+        }
+
+        function requestDeleteExerciseFromCatalog(id, exName) {
+          askConfirm(
+            'Elimina Esercizio',
+            `Vuoi davvero eliminare "${exName}" dal catalogo? L'operazione non può essere annullata.`,
+            async () => { await deleteExerciseFromCatalog(id); }
+          );
+        }
+
+        async function loadLogs() {
+          const list = await db.workoutLogs.toArray();
+          workoutLogs.value = list.filter(l => !l.isDeleted).sort((a, b) => {
+            return String(b.date).localeCompare(String(a.date));
+          });
+        }
+
+        function startEditWebhook() {
+          tempWebhookUrl.value = webhookUrl.value;
+          isEditingWebhook.value = true;
+        }
+
+        function cancelEditWebhook() {
+          tempWebhookUrl.value = webhookUrl.value;
+          isEditingWebhook.value = false;
+        }
+
+        function saveWebhookUrl() {
+          webhookUrl.value = tempWebhookUrl.value.trim();
+          localStorage.setItem('pl_webhook_url', webhookUrl.value);
+          isEditingWebhook.value = false;
+          showToast('Webhook Google Apps Script salvato!');
+          if (webhookUrl.value) {
+            syncWithCloud({ silent: false });
+          }
+        }
+
+        function startEditGeminiKey() {
+          tempGeminiKey.value = geminiApiKey.value;
+          isEditingGeminiKey.value = true;
+        }
+
+        function cancelEditGeminiKey() {
+          tempGeminiKey.value = geminiApiKey.value;
+          isEditingGeminiKey.value = false;
+        }
+
+        function saveGeminiApiKey() {
+          geminiApiKey.value = tempGeminiKey.value.trim();
+          localStorage.setItem('pl_gemini_key', geminiApiKey.value);
+          isEditingGeminiKey.value = false;
+          showToast('API Key salvata!');
+        }
+
+        // =========================================================
+        // MOTORE DI SINCRONIZZAZIONE A 2 VIE (OFFLINE-FIRST DELTA)
+        // =========================================================
+        async function syncWithCloud({ silent = false } = {}) {
+          if (!webhookUrl.value || !webhookUrl.value.trim()) {
+            if (!silent) showToast('Configura prima l\'URL del Webhook in "SYNC & STORICO"!');
+            return;
+          }
+          if (!navigator.onLine) {
+            if (!silent) showToast('Dispositivo offline: i dati restano al sicuro in locale.');
+            return;
+          }
+          if (isSyncingCloud.value) return;
+
+          isSyncingCloud.value = true;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+          try {
+            const allExercises = await db.exercises.toArray();
+            const allTemplates = await db.templates.toArray();
+            const allWorkoutLogs = await db.workoutLogs.toArray();
+
+            // Record locali che hanno modifiche o sono stati cancellati
+            const dirtyExercises = allExercises.filter(e => e._dirty || e.isDeleted);
+            const dirtyTemplates = allTemplates.filter(t => t._dirty || t.isDeleted);
+            const dirtyLogs = allWorkoutLogs.filter(l => l._dirty || l.isDeleted);
+
+            const payload = {
+              action: "sync",
+              lastSyncTimestamp: lastSyncTime.value || null,
+              exercises: dirtyExercises,
+              templates: dirtyTemplates,
+              workoutLogs: dirtyLogs
+            };
+
+            const res = await fetch(webhookUrl.value.trim(), {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload),
+              signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+              throw new Error(`Risposta HTTP ${res.status}: ${res.statusText}`);
+            }
+
+            const textResponse = await res.text();
+            let result;
+            try {
+              result = JSON.parse(textResponse);
+            } catch (jsonErr) {
+              console.error('Risposta non JSON ricevuta da Google Apps Script:', textResponse);
+              throw new Error('Il Webhook non ha restituito JSON valido. Assicurati che l\'accesso sia impostato su "Chiunque" nelle impostazioni di distribuzione di Apps Script.');
+            }
+
+            if (result.status === 'success' && result.data) {
+              const data = result.data;
+
+              // 1. Applica Esercizi dal server
+              if (Array.isArray(data.exercises)) {
+                for (const ex of data.exercises) {
+                  if (ex.isDeleted) {
+                    await db.exercises.delete(ex.id);
+                  } else {
+                    await db.exercises.put({
+                      id: ex.id,
+                      name: ex.name,
+                      category: ex.category,
+                      updatedAt: ex.updatedAt,
+                      isDeleted: false,
+                      _dirty: false
+                    });
+                  }
+                }
+              }
+              for (const dex of dirtyExercises) {
+                if (dex.isDeleted) {
+                  await db.exercises.delete(dex.id);
+                } else {
+                  await db.exercises.update(dex.id, { _dirty: false });
+                }
+              }
+
+              // 2. Applica Schede (Templates) dal server
+              if (Array.isArray(data.templates)) {
+                for (const t of data.templates) {
+                  if (t.isDeleted) {
+                    await db.templates.delete(t.id);
+                  } else {
+                    await db.templates.put({
+                      id: t.id,
+                      program: t.program,
+                      week: t.week,
+                      session: t.session,
+                      exercises: t.exercises || [],
+                      updatedAt: t.updatedAt,
+                      isDeleted: false,
+                      _dirty: false
+                    });
+                  }
+                }
+              }
+              for (const dt of dirtyTemplates) {
+                if (dt.isDeleted) {
+                  await db.templates.delete(dt.id);
+                } else {
+                  await db.templates.update(dt.id, { _dirty: false });
+                }
+              }
+
+              // 3. Applica Workout Logs dal server
+              if (Array.isArray(data.workoutLogs)) {
+                for (const log of data.workoutLogs) {
+                  if (log.isDeleted) {
+                    await db.workoutLogs.delete(log.id);
+                  } else {
+                    await db.workoutLogs.put({
+                      id: log.id,
+                      date: normalizeDateToYMD(log.date),
+                      program: log.program,
+                      week: log.week,
+                      session: log.session,
+                      isRepeated: log.isRepeated,
+                      performedExercises: log.performedExercises || [],
+                      updatedAt: log.updatedAt,
+                      isDeleted: false,
+                      _dirty: false,
+                      synced: true
+                    });
+                  }
+                }
+              }
+              for (const dl of dirtyLogs) {
+                if (dl.isDeleted) {
+                  await db.workoutLogs.delete(dl.id);
+                } else {
+                  await db.workoutLogs.update(dl.id, { _dirty: false, synced: true });
+                }
+              }
+
+              // Aggiorna Timestamp di Sincronizzazione
+              if (result.serverTime) {
+                lastSyncTime.value = result.serverTime;
+                localStorage.setItem('pl_last_sync_time', result.serverTime);
+              }
+
+              await loadCatalog();
+              await deduplicateExercises();
+              await loadSelectedPlanAndWorkout();
+              await loadLogs();
+              await updatePendingCount();
+
+              if (!silent) {
+                showToast('✓ Sincronizzazione completata!');
+              }
+            } else {
+              throw new Error(result.message || 'Dati non validi restituiti dal server.');
+            }
+          } catch (err) {
+            clearTimeout(timeoutId);
+            console.error('Errore durante la sincronizzazione:', err);
+            const errMsg = err.name === 'AbortError' 
+              ? 'Timeout connessione Google Sheets (20s). Riprova.' 
+              : (err.message || 'Errore durante la sincronizzazione Cloud.');
+            if (!silent) {
+              showToast(`⚠️ ${errMsg}`);
+            }
+          } finally {
+            clearTimeout(timeoutId);
+            isSyncingCloud.value = false;
+            await updatePendingCount();
+          }
+        }
+
+        function triggerManualSync() {
+          syncWithCloud({ silent: false });
+        }
+
+        async function syncLog(log) {
+          syncWithCloud({ silent: false });
+        }
+
+        async function deleteLog(id) {
+          const log = await db.workoutLogs.get(id);
+          if (log) {
+            await db.workoutLogs.put({
+              ...log,
+              isDeleted: true,
+              updatedAt: new Date().toISOString(),
+              _dirty: true
+            });
+            await loadLogs();
+            showToast('Allenamento eliminato');
+            triggerDebouncedSync(500);
+          }
+        }
+
+        function requestDeleteLog(id, date) {
+          askConfirm(
+            'Elimina Allenamento',
+            `Vuoi davvero eliminare l'allenamento del ${date}? L'operazione non può essere annullata.`,
+            async () => { await deleteLog(id); }
+          );
+        }
+
+        function showLogDataModal(log) {
+          selectedLogForModal.value = log;
+        }
+
+        function copyModalJson() {
+          if (!selectedLogForModal.value) return;
+          const str = JSON.stringify(selectedLogForModal.value, null, 2);
+          const textarea = document.createElement('textarea');
+          textarea.value = str;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          showToast('JSON copiato negli appunti!');
+        }
+
+        async function processImageFile(file) {
+          if (!file) return;
+
+          isImportingImage.value = true;
+          showToast('Analisi immagine con IA in corso...');
+
+          try {
+            const base64Data = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result;
+                const base64 = result.split(',')[1];
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+
+            const catalogNames = exercises.value.map(e => e.name).join(', ');
+
+            const promptText = `Sei un esperto sviluppatore e coach di powerlifting. Analizza la seguente immagine/screenshot di una scheda di allenamento.
+Estrai tutti gli esercizi presenti nell'ordine in cui compaiono.
+Elenco degli esercizi attualmente presenti nel catalogo dell'app: [${catalogNames}].
+
+Per ogni esercizio estratto:
+1. "exerciseName": Se trovi una corrispondenza con uno degli esercizi del catalogo sopra, usa ESATTAMENTE quel nome dal catalogo. Altrimenti, usa il nome dell'esercizio così come scritto nell'immagine.
+2. "category": Deve essere "main" (se fondamentale di powerlifting come squat, panca piana, stacco), "variant" (variante dei fondamentali come panca board, pin squat, fermo 3s) o "accessory" (complementare come trazioni, lat machine, rematore, bicipiti, tricipiti, dip).
+3. "target": Indicazione di carico/reps/serie (es. "88kg 3/4 x 6", "140kg 1x1 + 3x4 @125kg", "10 RM 3 e 3 x 4").
+4. "rest": Tempi di recupero se specificati (es. "3'", "2'", "3'-4'"), altrimenti "".
+5. "notes": Note o indicazioni tecniche presenti nell'immagine.
+
+Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi: "exerciseName", "category", "target", "rest", "notes". Non includere alcun altro testo o markdown.`;
+
+            const apiKey = (localStorage.getItem('pl_gemini_key') || '').trim();
+            if (!apiKey) {
+              showToast('Configura prima l\'API Key di Gemini nel tab Sync & Storico.');
+              throw new Error('Manca API key');
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+
+            const payload = {
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { text: promptText },
+                    {
+                      inlineData: {
+                        mimeType: file.type || "image/png",
+                        data: base64Data
+                      }
+                    }
+                  ]
+                }
+              ]
+            };
+
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              throw new Error('Errore nella chiamata all\'IA.');
+            }
+
+            const data = await res.json();
+            const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!candidateText) {
+              throw new Error('Nessun testo restituito.');
+            }
+
+            const cleanJsonText = candidateText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsedExercises = JSON.parse(cleanJsonText);
+
+            if (Array.isArray(parsedExercises) && parsedExercises.length > 0) {
+              const now = new Date().toISOString();
+              for (const item of parsedExercises) {
+                const exists = exercises.value.some(e => e.name.toLowerCase() === item.exerciseName.toLowerCase());
+                if (!exists && item.exerciseName) {
+                  await db.exercises.put({
+                    id: generateUUID(),
+                    name: item.exerciseName,
+                    category: item.category || 'accessory',
+                    updatedAt: now,
+                    isDeleted: false,
+                    _dirty: true
+                  });
+                }
+              }
+              await loadCatalog();
+
+              currentPlan.exercises = parsedExercises.map(item => ({
+                exerciseName: item.exerciseName,
+                category: item.category || 'accessory',
+                target: item.target || '',
+                rest: item.rest || '',
+                notes: item.notes || ''
+              }));
+
+              await savePlan();
+              showToast('Scheda importata con successo dall\'immagine!');
+            } else {
+              showToast('Nessun esercizio rilevato nell\'immagine.');
+            }
+          } catch (err) {
+            console.error('Errore importazione immagine:', err);
+            showToast('Impossibile importare la scheda dall\'immagine.');
+          } finally {
+            isImportingImage.value = false;
+          }
+        }
+
+        async function handleImageUpload(event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          await processImageFile(file);
+          event.target.value = '';
+        }
+
+        async function handleClipboardPaste() {
+          try {
+            if (navigator.clipboard && navigator.clipboard.read) {
+              const items = await navigator.clipboard.read();
+              for (const item of items) {
+                const imageType = item.types.find(type => type.startsWith('image/'));
+                if (imageType) {
+                  const blob = await item.getType(imageType);
+                  const file = new File([blob], "clipboard-image.png", { type: imageType });
+                  await processImageFile(file);
+                  return;
+                }
+              }
+              showToast('Nessuna immagine trovata negli appunti.');
+            } else {
+              showToast('Incolla l\'immagine premendo Ctrl+V / Cmd+V');
+            }
+          } catch (err) {
+            console.warn('Lettura appunti non permessa, usare Ctrl+V', err);
+            showToast('Incolla l\'immagine premendo Ctrl+V / Cmd+V sulla tastiera');
+          }
+        }
+
+        function filterExercises(category) {
+          return exercises.value.filter(e => e.category === category);
+        }
+
+        function getCategoryLabel(cat) {
+          if (cat === 'main') return 'Blocco 1 - Fondamentale';
+          if (cat === 'variant') return 'Blocco 2 - Variante';
+          return 'Blocco 3 - Complementari';
+        }
+
+        function getCategoryBadgeText(cat) {
+          if (cat === 'main') return 'FONDAMENTALE';
+          if (cat === 'variant') return 'VARIANTE';
+          if (cat === 'accessory') return 'COMPLEMENTARE';
+          return cat;
+        }
+
+        function getCategoryHeaderBg(cat) {
+          if (cat === 'main') return 'bg-[#9e1b32]';
+          if (cat === 'variant') return 'bg-[#f57c00]';
+          return 'bg-[#7e57c2]';
+        }
+
+        function getIcon(name) {
+          return isDarkMode.value 
+            ? `icons/white_for_dark_theme/${name}.png` 
+            : `icons/black_for_light_theme/${name}.png`;
+        }
+
+        async function resetAppToInitialState() {
+          const now = new Date().toISOString();
+
+          // 1. Soft-delete di tutte le schede (templates)
+          const allTemplates = await db.templates.toArray();
+          for (const t of allTemplates) {
+            await db.templates.put({
+              ...t,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          }
+
+          // 2. Soft-delete di tutti gli allenamenti e dello storico (workoutLogs)
+          const allLogs = await db.workoutLogs.toArray();
+          for (const l of allLogs) {
+            await db.workoutLogs.put({
+              ...l,
+              isDeleted: true,
+              updatedAt: now,
+              _dirty: true
+            });
+          }
+
+          // 3. Svuotamento stati locali correnti
+          currentPlan.exercises = [];
+          currentWorkout.id = null;
+          currentWorkout.isRepeated = false;
+          currentWorkout.performedExercises = [];
+          workoutLogs.value = [];
+
+          // 4. Ricarica interfacce e contatori
+          await loadSelectedPlanAndWorkout();
+          await loadLogs();
+          await updatePendingCount();
+
+          showToast('Applicazione resettata. Premi "Sincronizza Ora" per propagare a Google Sheets.');
+        }
+
+        function requestResetApp() {
+          askConfirm(
+            'Reset Completo Applicazione',
+            'Sei sicuro di voler resettare l\'applicazione? Tutte le schede, gli allenamenti registrati e lo storico verranno cancellati dal dispositivo locale. L\'operazione verrà propagata a Google Sheets alla prossima sincronizzazione.',
+            async () => { await resetAppToInitialState(); }
+          );
+        }
+
+        // ==========================================
+        // FAQ & GUIDA RAPIDA
+        // ==========================================
+        const isFaqExpanded = ref(false);
+        const expandedFaqItems = ref({});
+
+        function toggleFaqItem(idx) {
+          expandedFaqItems.value[idx] = !expandedFaqItems.value[idx];
+        }
+
+        const faqList = [
+          {
+            q: "Posso registrare gli allenamenti in palestra senza connessione internet?",
+            a: "Sì, al 100%. L'app è concepita con architettura Offline-First: tutte le serie, i carichi, i recuperi e le note vengono salvati istantaneamente nella memoria interna del tuo dispositivo (IndexedDB).\nQuando torni sotto rete Wi-Fi o connessione dati, ti basta aprire la scheda SYNC e premere 'Sincronizza Ora' per aggiornare il tuo Google Sheet."
+          },
+          {
+            q: "Come gestisco la sincronizzazione se uso più dispositivi (es. telefono palestra offline e telefono principale)?",
+            a: "PowerTrack gestisce automaticamente i conflitti confrontando data e ora dell'ultima modifica (Last-Write-Wins).\nQuando rientri dalla palestra con il telefono offline e lo colleghi al Wi-Fi, premi 'Sincronizza Ora': i nuovi allenamenti svolti verranno inviati a Google Sheets e le eventuali modifiche fatte dal telefono principale o dal PC verranno integrate in automatico."
+          },
+          {
+            q: "Dove posso consultare i miei allenamenti da PC in modo pulito e senza codici tecnici?",
+            a: "All'interno del tuo Foglio Google, lo script genera e aggiorna automaticamente la scheda 'Analisi'.\nQuesto foglio è formattato per la lettura umana ed esclude automaticamente tutte le sedute cancellate e le colonne tecniche (UUID, timestamp grezzi). È la base ideale per creare grafici di progressione carichi e tabelle pivot."
+          },
+          {
+            q: "Cosa significa la colonna 'Eliminato = Sì' nel foglio Allenamenti?",
+            a: "È un segnaposto tecnico di sicurezza (soft-delete). Serve per avvisare gli altri tuoi dispositivi (che magari sono offline in quel momento) che quella determinata seduta è stata cancellata, impedendo che al loro ritorno online la re-invino allo Sheet come se fosse nuova."
+          },
+          {
+            q: "Come posso importare una nuova scheda usando l'Intelligenza Artificiale?",
+            a: "Come funziona:\nNella tab 'SCHEDA', seleziona Programma, Settimana e Seduta. Tocca 'Carica immagine' per scattare una foto/screenshot o 'Incolla appunti' (anche premendo Ctrl+V da PC). L'IA estrarrà automaticamente esercizi, carichi target, recuperi e note.\n\nRequisiti:\nRichiede una Gemini API Key gratuita creata su Google AI Studio (aistudio.google.com) e salvata nel box 'Configurazione e Chiavi'.\n\nIn caso di problemi:\n- Errore API / Modello non disponibile: verifica lo stato della chiave su Google AI Studio o aggiorna il nome del modello alla riga apiUrl in index.html (es. gemini-2.0-flash);\n- Estrazione imprecisa o fallita: assicurati che la foto sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda con 'Incolla appunti'."
+          },
+          {
+            q: "Cosa accade quando premo il pulsante RESET?",
+            a: "Il reset svuota schede, allenamenti registrati e storico dalla memoria locale del dispositivo. L'azzeramento verrà propagato a Google Sheets al successivo 'Sincronizza Ora'. Il Catalogo degli esercizi non viene toccato e resta sempre intatto."
+          },
+          {
+            q: "Come faccio una pulizia totale e definitiva a inizio stagione?",
+            a: "1. Nel Google Sheet fai 'File > Crea una copia' per salvare un archivio storico;\n2. Premi 'RESET' e poi 'Sincronizza Ora' su TUTTI i dispositivi e browser in cui usi l'app (telefono principale, telefono da palestra collegato al Wi-Fi ed eventuale browser PC / Web app);\n3. Apri il Google Sheet e, nei fogli 'Allenamenti' e 'Schede', seleziona ed elimina tutte le righe dalla riga 2 in giù (lasciando solo la riga 1 di intestazione)."
+          }
+        ];
+
+        return {
+          activeTab,
+          isDarkMode,
+          isImportingImage,
+          toggleTheme,
+          selectedProgram,
+          selectedWeek,
+          selectedSession,
+          exercises,
+          currentPlan,
+          currentWorkout,
+          workoutLogs,
+          webhookUrl,
+          newExercise,
+          toastMessage,
+          activeRestPicker,
+          restPresets,
+          toggleRestPicker,
+          selectRestTime,
+          activeNotesDialog,
+          openNotesDialog,
+          closeNotesDialog,
+          getSet,
+          showHistoryModal,
+          historyExerciseName,
+          exerciseHistory,
+          openExerciseHistory,
+          openExerciseHistoryFromSelect,
+          allExerciseNames,
+          exerciseSearchQuery,
+          filteredExerciseNames,
+          formatDateIT,
+          onFilterChange,
+          onWorkoutDateChange,
+          onWorkoutDataInput,
+          onRepsInput,
+          reloadWorkoutFromPlan,
+          editLogFromHistory,
+          addSet,
+          removeSet,
+          requestRemoveSet,
+          removeExerciseFromWorkout,
+          requestRemoveExerciseFromWorkout,
+          requestClearWorkout,
+          saveWorkoutSession,
+          addExerciseToPlanFromSelect,
+          changeExerciseInPlan,
+          moveExerciseInPlan,
+          removeExerciseFromPlan,
+          requestRemoveExerciseFromPlan,
+          requestClearPlan,
+          savePlan,
+          handleImageUpload,
+          handleClipboardPaste,
+          selectedLogForModal,
+          showLogDataModal,
+          copyModalJson,
+          addNewExerciseToCatalog,
+          moveExerciseInCatalog,
+          saveCatalog,
+          deleteExerciseFromCatalog,
+          requestDeleteExerciseFromCatalog,
+          saveWebhookUrl,
+          geminiApiKey,
+          saveGeminiApiKey,
+          isConfigExpanded,
+          isEditingWebhook,
+          tempWebhookUrl,
+          startEditWebhook,
+          cancelEditWebhook,
+          isEditingGeminiKey,
+          tempGeminiKey,
+          startEditGeminiKey,
+          cancelEditGeminiKey,
+          isSyncingCloud,
+          isOnline,
+          lastSyncTimeFormatted,
+          pendingChangesCount,
+          syncStatusLabel,
+          syncStatusDotClass,
+          syncStatusTextClass,
+          syncStatusBadgeClass,
+          triggerManualSync,
+          userBodyWeight,
+          levelTable,
+          calculateLevels,
+          resetLevels,
+          syncLog,
+          deleteLog,
+          requestDeleteLog,
+          confirmDialog,
+          askConfirm,
+          cancelConfirm,
+          runConfirm,
+          filterExercises,
+          requestResetApp,
+          isFaqExpanded,
+          expandedFaqItems,
+          toggleFaqItem,
+          faqList,
+          getIcon,
+          getCategoryLabel,
+          getCategoryBadgeText,
+          getCategoryHeaderBg
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
