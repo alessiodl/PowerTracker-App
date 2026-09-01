@@ -131,7 +131,7 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 ---
 
 ### I fogli generati su Google Sheets
-Ad ogni sincronizzazione, Google Apps Script mantiene aggiornati **4 fogli di lavoro**:
+Ad ogni sincronizzazione, Google Apps Script mantiene aggiornati i fogli di lavoro:
 
 | Foglio | Scopo | Note di Utilizzo |
 | :--- | :--- | :--- |
@@ -139,6 +139,7 @@ Ad ogni sincronizzazione, Google Apps Script mantiene aggiornati **4 fogli di la
 | **`Allenamenti`** | Database tecnico sedute | Contiene lo storico grezzo completo con colonna `Eliminato` per la sync multi-dispositivo. |
 | **`Schede`** | Database tecnico schede target | Contiene la pianificazione per programma/settimana/seduta. |
 | **`Catalogo`** | Database esercizi | Contiene la lista ufficiale degli esercizi e delle categorie. |
+| **`Configurazione`** | Parametri struttura & etichette | Sincronizza tra tutti i dispositivi il numero di programmi, settimane, giorni e i nomi personalizzati dei blocchi. |
 
 ---
 
@@ -181,8 +182,61 @@ function doPost(e) {
     var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
     var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
     var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
+    var sheetCfg = ss.getSheetByName("Configurazione") || ss.insertSheet("Configurazione");
 
     if (action === "sync") {
+      // ==========================================
+      // 0. CONFIGURAZIONE STRUTTURA & PIANIFICAZIONE
+      // ==========================================
+      var currentCfg = {
+        numPrograms: 2,
+        numWeeks: 14,
+        numSessions: 4,
+        programLabels: {},
+        updatedAt: "1970-01-01T00:00:00.000Z"
+      };
+
+      if (sheetCfg.getLastRow() > 1) {
+        var cfgRows = sheetCfg.getRange(2, 1, sheetCfg.getLastRow() - 1, 2).getValues();
+        for (var i = 0; i < cfgRows.length; i++) {
+          var k = String(cfgRows[i][0]);
+          var v = cfgRows[i][1];
+          if (k === "numPrograms") currentCfg.numPrograms = Number(v) || 2;
+          else if (k === "numWeeks") currentCfg.numWeeks = Number(v) || 14;
+          else if (k === "numSessions") currentCfg.numSessions = Number(v) || 4;
+          else if (k === "programLabels") {
+            try { currentCfg.programLabels = JSON.parse(v); } catch(err) { currentCfg.programLabels = {}; }
+          }
+          else if (k === "updatedAt") currentCfg.updatedAt = v instanceof Date ? v.toISOString() : String(v || "");
+        }
+      }
+
+      var clientCfg = payload.config;
+      if (clientCfg && clientCfg.updatedAt) {
+        var clientTime = new Date(clientCfg.updatedAt).getTime();
+        var serverTimeCfg = new Date(currentCfg.updatedAt).getTime();
+        if (clientTime >= serverTimeCfg) {
+          currentCfg = {
+            numPrograms: Number(clientCfg.numPrograms) || 2,
+            numWeeks: Number(clientCfg.numWeeks) || 14,
+            numSessions: Number(clientCfg.numSessions) || 4,
+            programLabels: clientCfg.programLabels || {},
+            updatedAt: clientCfg.updatedAt || serverTime
+          };
+
+          sheetCfg.clear();
+          sheetCfg.appendRow(["Chiave", "Valore"]);
+          sheetCfg.getRange(1, 1, 1, 2).setFontWeight("bold");
+          sheetCfg.getRange(2, 1, 5, 2).setValues([
+            ["numPrograms", currentCfg.numPrograms],
+            ["numWeeks", currentCfg.numWeeks],
+            ["numSessions", currentCfg.numSessions],
+            ["programLabels", JSON.stringify(currentCfg.programLabels)],
+            ["updatedAt", currentCfg.updatedAt]
+          ]);
+        }
+      }
+
       // ==========================================
       // 1. CATALOGO ESERCIZI (In-memory merge + batch update)
       // ==========================================
@@ -492,7 +546,8 @@ function doPost(e) {
         data: {
           exercises: catList,
           templates: tplList,
-          workoutLogs: logList
+          workoutLogs: logList,
+          config: currentCfg
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }

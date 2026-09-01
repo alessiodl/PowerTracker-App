@@ -1387,6 +1387,7 @@
         const configNumWeeks = ref(Number(localStorage.getItem('pl_cfg_num_weeks')) || 14);
         const configNumSessions = ref(Number(localStorage.getItem('pl_cfg_num_sessions')) || 4);
         const configProgramLabels = ref(JSON.parse(localStorage.getItem('pl_cfg_program_labels') || '{}'));
+        const configUpdatedAt = ref(localStorage.getItem('pl_cfg_updated_at') || new Date(0).toISOString());
 
         const availablePrograms = computed(() => {
           const count = Math.max(1, Math.min(6, configNumPrograms.value));
@@ -1415,10 +1416,12 @@
         }
 
         function onPlanningConfigChange() {
+          configUpdatedAt.value = new Date().toISOString();
           localStorage.setItem('pl_cfg_num_programs', String(configNumPrograms.value));
           localStorage.setItem('pl_cfg_num_weeks', String(configNumWeeks.value));
           localStorage.setItem('pl_cfg_num_sessions', String(configNumSessions.value));
           localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
+          localStorage.setItem('pl_cfg_updated_at', configUpdatedAt.value);
 
           // Bounds checking
           if (selectedProgram.value > configNumPrograms.value) {
@@ -1432,11 +1435,15 @@
           }
 
           onFilterChange();
+          triggerDebouncedSync(1000);
         }
 
         function updateProgramLabel(p, val) {
           configProgramLabels.value[p] = val;
+          configUpdatedAt.value = new Date().toISOString();
           localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
+          localStorage.setItem('pl_cfg_updated_at', configUpdatedAt.value);
+          triggerDebouncedSync(1500);
         }
 
         const exercises = ref([]);
@@ -2531,7 +2538,14 @@
               lastSyncTimestamp: lastSyncTime.value || null,
               exercises: dirtyExercises,
               templates: dirtyTemplates,
-              workoutLogs: dirtyLogs
+              workoutLogs: dirtyLogs,
+              config: {
+                numPrograms: configNumPrograms.value,
+                numWeeks: configNumWeeks.value,
+                numSessions: configNumSessions.value,
+                programLabels: configProgramLabels.value,
+                updatedAt: configUpdatedAt.value || new Date().toISOString()
+              }
             };
 
             const res = await fetch(webhookUrl.value.trim(), {
@@ -2558,6 +2572,26 @@
 
             if (result.status === 'success' && result.data) {
               const data = result.data;
+
+              // 0. Applica Configurazione dal server
+              if (data.config && data.config.updatedAt) {
+                const sCfg = data.config;
+                const sTime = new Date(sCfg.updatedAt).getTime();
+                const lTime = configUpdatedAt.value ? new Date(configUpdatedAt.value).getTime() : 0;
+                if (sTime > lTime) {
+                  configNumPrograms.value = Number(sCfg.numPrograms) || 2;
+                  configNumWeeks.value = Number(sCfg.numWeeks) || 14;
+                  configNumSessions.value = Number(sCfg.numSessions) || 4;
+                  configProgramLabels.value = sCfg.programLabels || {};
+                  configUpdatedAt.value = sCfg.updatedAt;
+
+                  localStorage.setItem('pl_cfg_num_programs', String(configNumPrograms.value));
+                  localStorage.setItem('pl_cfg_num_weeks', String(configNumWeeks.value));
+                  localStorage.setItem('pl_cfg_num_sessions', String(configNumSessions.value));
+                  localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
+                  localStorage.setItem('pl_cfg_updated_at', configUpdatedAt.value);
+                }
+              }
 
               // 1. Applica Esercizi dal server
               if (Array.isArray(data.exercises)) {

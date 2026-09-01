@@ -194,7 +194,7 @@
       <div class="space-y-4 text-xs sm:text-sm dark:text-slate-300 text-slate-700 leading-relaxed">
         
         <p>
-          Il motore di sincronizzazione a 2 vie trasmette a Google Sheets solo i record modificati o cancellati (delta sync) con risoluzione Last-Write-Wins sui timestamp.
+          Il motore di sincronizzazione a 2 vie trasmette a Google Sheets i record modificati o cancellati (delta sync) e la configurazione strutturale attiva con risoluzione Last-Write-Wins sui timestamp.
         </p>
 
         <!-- Sheets table summary -->
@@ -227,6 +227,11 @@
                 <td class="p-2.5 font-bold">Catalogo</td>
                 <td class="p-2.5">Database esercizi</td>
                 <td class="p-2.5 dark:text-slate-400 text-slate-600">Elenco ufficiale degli esercizi e delle categorie.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">Configurazione</td>
+                <td class="p-2.5">Parametri struttura & etichette</td>
+                <td class="p-2.5 dark:text-slate-400 text-slate-600">Sincronizza tra tutti i dispositivi il numero di programmi, settimane, giorni e i nomi personalizzati dei blocchi.</td>
               </tr>
             </tbody>
           </table>
@@ -286,8 +291,61 @@
     var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
     var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
     var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
+    var sheetCfg = ss.getSheetByName("Configurazione") || ss.insertSheet("Configurazione");
 
     if (action === "sync") {
+      // ==========================================
+      // 0. CONFIGURAZIONE STRUTTURA & PIANIFICAZIONE
+      // ==========================================
+      var currentCfg = {
+        numPrograms: 2,
+        numWeeks: 14,
+        numSessions: 4,
+        programLabels: {},
+        updatedAt: "1970-01-01T00:00:00.000Z"
+      };
+
+      if (sheetCfg.getLastRow() > 1) {
+        var cfgRows = sheetCfg.getRange(2, 1, sheetCfg.getLastRow() - 1, 2).getValues();
+        for (var i = 0; i < cfgRows.length; i++) {
+          var k = String(cfgRows[i][0]);
+          var v = cfgRows[i][1];
+          if (k === "numPrograms") currentCfg.numPrograms = Number(v) || 2;
+          else if (k === "numWeeks") currentCfg.numWeeks = Number(v) || 14;
+          else if (k === "numSessions") currentCfg.numSessions = Number(v) || 4;
+          else if (k === "programLabels") {
+            try { currentCfg.programLabels = JSON.parse(v); } catch(err) { currentCfg.programLabels = {}; }
+          }
+          else if (k === "updatedAt") currentCfg.updatedAt = v instanceof Date ? v.toISOString() : String(v || "");
+        }
+      }
+
+      var clientCfg = payload.config;
+      if (clientCfg && clientCfg.updatedAt) {
+        var clientTime = new Date(clientCfg.updatedAt).getTime();
+        var serverTimeCfg = new Date(currentCfg.updatedAt).getTime();
+        if (clientTime >= serverTimeCfg) {
+          currentCfg = {
+            numPrograms: Number(clientCfg.numPrograms) || 2,
+            numWeeks: Number(clientCfg.numWeeks) || 14,
+            numSessions: Number(clientCfg.numSessions) || 4,
+            programLabels: clientCfg.programLabels || {},
+            updatedAt: clientCfg.updatedAt || serverTime
+          };
+
+          sheetCfg.clear();
+          sheetCfg.appendRow(["Chiave", "Valore"]);
+          sheetCfg.getRange(1, 1, 1, 2).setFontWeight("bold");
+          sheetCfg.getRange(2, 1, 5, 2).setValues([
+            ["numPrograms", currentCfg.numPrograms],
+            ["numWeeks", currentCfg.numWeeks],
+            ["numSessions", currentCfg.numSessions],
+            ["programLabels", JSON.stringify(currentCfg.programLabels)],
+            ["updatedAt", currentCfg.updatedAt]
+          ]);
+        }
+      }
+
       // ==========================================
       // 1. CATALOGO ESERCIZI (In-memory merge + batch update)
       // ==========================================
@@ -597,7 +655,8 @@
         data: {
           exercises: catList,
           templates: tplList,
-          workoutLogs: logList
+          workoutLogs: logList,
+          config: currentCfg
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }
