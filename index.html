@@ -677,81 +677,9 @@
 
       </section>
 
-      <!-- ================= TAB 5: SYNC & STORICO ================= -->
+      <!-- ================= TAB 5: STORICO ================= -->
       <section v-if="activeTab === 'history'" class="space-y-4">
         
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
-          <div>
-            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Google Sheets AppScript</h2>
-            <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Inserisci l'URL del tuo Google Apps Script Webhook per sincronizzare i dati sul tuo foglio Google.</p>
-            
-            <div class="space-y-2">
-              <input 
-                type="text" 
-                v-model="webhookUrl" 
-                placeholder="https://script.google.com/macros/s/.../exec" 
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-mono"
-              />
-              <button @click="saveWebhookUrl" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-mono uppercase font-bold rounded-[2px] border dark:border-slate-700 border-slate-300">
-                Salva Webhook URL
-              </button>
-            </div>
-          </div>
-
-          <div class="pt-2 border-t dark:border-slate-800 border-slate-200 space-y-3">
-            <div class="flex items-center justify-between">
-              <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Stato</h2>
-              <span class="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold uppercase" :class="syncStatusBadgeClass">
-                {{ syncStatusLabel }}
-              </span>
-            </div>
-
-            <div class="dark:bg-slate-950 bg-slate-50 p-2.5 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs font-mono space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="dark:text-slate-400 text-slate-500">Ultima sincronizzazione:</span>
-                <span class="font-bold dark:text-slate-200 text-slate-800">{{ lastSyncTimeFormatted }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="dark:text-slate-400 text-slate-500">Modifiche locali in sospeso:</span>
-                <span class="font-bold" :class="pendingChangesCount > 0 ? 'text-amber-500' : 'text-emerald-500'">
-                  {{ pendingChangesCount }} {{ pendingChangesCount === 1 ? 'elemento' : 'elementi' }}
-                </span>
-              </div>
-            </div>
-
-            <button 
-              @click="triggerManualSync" 
-              :disabled="isSyncingCloud || !webhookUrl"
-              class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99]"
-            >
-              <span v-if="isSyncingCloud" class="animate-spin">🔄</span>
-              <span v-else>⚡</span>
-              <span>{{ isSyncingCloud ? 'Sincronizzazione a due vie in corso...' : 'Sincronizza Ora' }}</span>
-            </button>
-
-            <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed">
-              💡 <strong>Funziona anche offline:</strong> Puoi registrare i tuoi allenamenti anche senza connessione internet. I dati restano al sicuro sul tuo dispositivo e vengono sincronizzati con il foglio Google non appena torni online.
-            </p>
-          </div>
-        </div>
-
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
-          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">API Key per funzionalità AI</h2>
-          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Inserisci la tua API Key di Google Gemini per abilitare l'import di schede da immagine o appunti.</p>
-          
-          <div class="space-y-2">
-            <input 
-              type="password" 
-              v-model="geminiApiKey" 
-              placeholder="AIza..." 
-              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-mono"
-            />
-            <button @click="saveGeminiApiKey" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-mono uppercase font-bold rounded-[2px] border dark:border-slate-700 border-slate-300">
-              Salva API Key
-            </button>
-          </div>
-        </div>
-
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
           <div>
             <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Storico Esercizio</h2>
@@ -835,6 +763,83 @@
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 6: SYNC & CONFIG ================= -->
+      <section v-if="activeTab === 'sync'" class="space-y-4">
+        
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
+          <div>
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Google Sheets AppScript</h2>
+            <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Inserisci l'URL del tuo Google Apps Script Webhook per sincronizzare i dati sul tuo foglio Google.</p>
+            
+            <div class="space-y-2">
+              <input 
+                type="text" 
+                v-model="webhookUrl" 
+                placeholder="https://script.google.com/macros/s/.../exec" 
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-mono"
+              />
+              <button @click="saveWebhookUrl" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-mono uppercase font-bold rounded-[2px] border dark:border-slate-700 border-slate-300">
+                Salva Webhook URL
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t dark:border-slate-800 border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Stato</h2>
+              <span class="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold uppercase" :class="syncStatusBadgeClass">
+                {{ syncStatusLabel }}
+              </span>
+            </div>
+
+            <div class="dark:bg-slate-950 bg-slate-50 p-2.5 rounded-[2px] border dark:border-slate-800 border-slate-200 text-xs font-mono space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="dark:text-slate-400 text-slate-500">Ultima sincronizzazione:</span>
+                <span class="font-bold dark:text-slate-200 text-slate-800">{{ lastSyncTimeFormatted }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="dark:text-slate-400 text-slate-500">Modifiche locali in sospeso:</span>
+                <span class="font-bold" :class="pendingChangesCount > 0 ? 'text-amber-500' : 'text-emerald-500'">
+                  {{ pendingChangesCount }} {{ pendingChangesCount === 1 ? 'elemento' : 'elementi' }}
+                </span>
+              </div>
+            </div>
+
+            <button 
+              @click="triggerManualSync" 
+              :disabled="isSyncingCloud || !webhookUrl"
+              class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[2px] text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99]"
+            >
+              <span v-if="isSyncingCloud" class="animate-spin">🔄</span>
+              <span v-else>⚡</span>
+              <span>{{ isSyncingCloud ? 'Sincronizzazione a due vie in corso...' : 'Sincronizza Ora' }}</span>
+            </button>
+
+            <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed">
+              💡 <strong>Funziona anche offline:</strong> Puoi registrare i tuoi allenamenti anche senza connessione internet. I dati restano al sicuro sul tuo dispositivo e vengono sincronizzati con il foglio Google non appena torni online.
+            </p>
+          </div>
+        </div>
+
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
+          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">API Key per funzionalità AI</h2>
+          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Inserisci la tua API Key di Google Gemini per abilitare l'import di schede da immagine o appunti.</p>
+          
+          <div class="space-y-2">
+            <input 
+              type="password" 
+              v-model="geminiApiKey" 
+              placeholder="AIza..." 
+              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500 font-mono"
+            />
+            <button @click="saveGeminiApiKey" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-mono uppercase font-bold rounded-[2px] border dark:border-slate-700 border-slate-300">
+              Salva API Key
+            </button>
           </div>
         </div>
 
@@ -963,57 +968,67 @@
     </div>
 
     <!-- BOTTOM NAVIGATION BAR -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-2 py-1.5 z-40 transition-colors">
-      <div class="grid grid-cols-5 gap-1 text-center">
+    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1.5 z-40 transition-colors">
+      <div class="grid grid-cols-6 gap-1 text-center">
         
         <!-- Tab 1: SCHEDA TARGET -->
         <button 
           @click="activeTab = 'plan'" 
-          class="flex flex-col items-center py-1.5 px-1 rounded-[2px] transition-all"
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'plan' ? 'text-amber-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">📋</span>
-          <span class="text-[10px] font-mono mt-0.5 tracking-tighter">SCHEDA TARGET</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">TARGET</span>
         </button>
 
         <!-- Tab 2: ALLENAMENTO -->
         <button 
           @click="activeTab = 'workout'" 
-          class="flex flex-col items-center py-1.5 px-1 rounded-[2px] transition-all"
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'workout' ? 'text-sky-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">🏋️</span>
-          <span class="text-[10px] font-mono mt-0.5 tracking-tighter">ALLENAMENTO</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENA</span>
         </button>
 
         <!-- Tab 3: CATALOGO -->
         <button 
           @click="activeTab = 'catalog'" 
-          class="flex flex-col items-center py-1.5 px-1 rounded-[2px] transition-all"
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'catalog' ? 'text-purple-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">📚</span>
-          <span class="text-[10px] font-mono mt-0.5 tracking-tighter">CATALOGO</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
         </button>
 
         <!-- Tab 4: LIVELLI -->
         <button 
           @click="activeTab = 'levels'" 
-          class="flex flex-col items-center py-1.5 px-1 rounded-[2px] transition-all"
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">📈</span>
-          <span class="text-[10px] font-mono mt-0.5 tracking-tighter">LIVELLI</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
         </button>
 
-        <!-- Tab 5: SYNC & STORICO -->
+        <!-- Tab 5: STORICO -->
         <button 
           @click="activeTab = 'history'" 
-          class="flex flex-col items-center py-1.5 px-1 rounded-[2px] transition-all"
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'history' ? 'text-emerald-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
-          <span class="text-base">📊</span>
-          <span class="text-[10px] font-mono mt-0.5 tracking-tighter">SYNC & STORICO</span>
+          <span class="text-base">🕒</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">STORICO</span>
+        </button>
+
+        <!-- Tab 6: SYNC & CONFIG -->
+        <button 
+          @click="activeTab = 'sync'" 
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'sync' ? 'text-teal-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <span class="text-base">⚡</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
         </button>
 
       </div>
