@@ -62,7 +62,7 @@ La schermata principale utilizzata durante l'allenamento in palestra:
 * **Registrazione Serie**:
   * **Carico (kg)** e **Ripetizioni (Reps)** effettivamente sollevate.
   * **RPE / RIR**: Inserisci lo sforzo percepito (es. `8`, `8.5`, `9`).
-  * **Timer Recupero Rapido**: Tasti rapidi (1m, 1.5m, 2m, 3m, 4m, 5m) con conto alla rovescia sonoro/visivo.
+  * **Recupero Rapido**: Tasti rapidi (1m, 1.5m, 2m, 3m, 4m, 5m) per inserire al volo il tempo di recupero desiderato.
   * **Note per Set**: Icona dedicata per appunti tecnici su singole serie (es. *"cintura stretta"*, *"piede scivolato"*).
 * **Pulsanti Azione**: **`CONCLUDI E SINCRONIZZA`** (verde) per registrare la seduta nello storico e avviare la sync, **`SVUOTA`** (rosso) per cancellare i dati della sessione in corso.
 
