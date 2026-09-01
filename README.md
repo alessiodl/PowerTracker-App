@@ -44,11 +44,11 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
 
 ### Tab 1: SCHEDA (Pianificazione Target)
 Consente di pianificare la scheda di allenamento per il blocco attivo:
-* **Selettore Sessione**: In alto seleziona **Programma** (1 o 2), **Settimana** (1-14) e **Seduta** (A, B, C, D).
+* **Selettore Sessione**: In alto seleziona **Programma** (1-6 con etichette personalizzate opzionali), **Settimana** (da 4 a 20) e **Seduta** (da A fino a F, configurabili a piacere).
 * **Definizione Esercizi**: Inserisci gli esercizi dal menu a tendina o aggiungine di nuovi; imposta il target (es. `4x5 @70%` o `1x1 @8 + 3x4 @75%`), il recupero previsto e le note tecniche.
 * **Importazione Scheda con IA**:
-  * `📸 Carica immagine`: Scatta una foto o carica uno screenshot della tua scheda cartacea/digitale.
-  * `📋 Incolla Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
+  * `Carica immagine`: Scatta una foto o carica uno screenshot della tua scheda cartacea/digitale.
+  * `Incolla Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
   * L'IA (Gemini Flash) estrarrà automaticamente esercizi, categorie, carichi target e note.
 * **Riordino**: Usa le frecce `▲` / `▼` per organizzare la sequenza degli esercizi.
 * **Pulsanti Azione**: **`SALVA SCHEDA`** (verde) per salvare in locale e **`SVUOTA`** (rosso tenue) per azzerare la pianificazione del giorno.
@@ -81,7 +81,7 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 ---
 
 ### Tab 4: STORICO (Analisi Sedute e Progressioni)
-* **Ricerca e Storico per Esercizio**: Seleziona o cerca un esercizio (es. *"Squat"*) per vedere l'elenco cronologico di tutte le volte che è stato eseguito, con carichi, serie e miglior E1RM registrato.
+* **Ricerca e Storico per Esercizio**: Seleziona o cerca un esercizio (es. *"Squat"*) per vedere l'elenco cronologico di tutte le volte che è stato eseguito, con carichi, serie e note.
 * **Elenco Sedute Registrate**:
   * Badge stato: **`✓`** (Sincronizzato sul Cloud) o **`LOCALE`** (in attesa di connessione).
   * `Carica`: Riapre la seduta nella tab Allenamento per eventuali modifiche/correzioni.
@@ -90,9 +90,11 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 
 ---
 
-### Tab 5: SYNC & CONFIG (Sincronizzazione e Reset)
+### Tab 5: SYNC & CONFIG (Sincronizzazione, Struttura & Reset)
 * **Stato Sincronizzazione**: Visualizza l'orario dell'ultima sync e il contatore delle modifiche in sospeso (*"X elementi in attesa"*).
 * **Pulsante `SINCRONIZZA ORA`**: Esegue la sincronizzazione manuale a 2 vie istantanea con Google Sheets.
+* **Struttura e Pianificazione (Sottomenu Collassabile)**:
+  * Permette di personalizzare: **Giorni a settimana** (da 2 a 6, sedute A-F), **Settimane per ciclo** (da 4 a 20) e **Numero di Programmi** (da 1 a 6 con etichette opzionali, es. *Accumulo*, *Intensificazione*).
 * **Configurazione e Chiavi (Sottomenu Collassabile)**:
   * Box chiuso di default per evitare tocchi accidentali.
   * **Modalità Sola Lettura**: Mostra i campi bloccati e mascherati (`••••••••`).

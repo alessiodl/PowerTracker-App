@@ -149,14 +149,13 @@
       <!-- Row 2: Session Selector (full width) -->
       <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs font-mono shadow-sm">
         <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option :value="1" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 1</option>
-          <option :value="2" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">PROG 2</option>
+          <option v-for="p in availablePrograms" :key="p" :value="p" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ getProgramLabel(p) }}</option>
         </select>
         <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option v-for="w in 14" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
+          <option v-for="w in availableWeeks" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
         </select>
         <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option v-for="s in ['A','B','C','D']" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
+          <option v-for="s in availableSessions" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
         </select>
       </div>
     </header>
@@ -166,7 +165,7 @@
       <h2 class="text-sm md:text-base font-black uppercase tracking-widest font-mono">
         SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
       </h2>
-      <p class="text-[10px] text-slate-300 font-mono tracking-wide">Programma {{ selectedProgram }}</p>
+      <p class="text-[10px] text-slate-300 font-mono tracking-wide">{{ getProgramBannerLabel(selectedProgram) }}</p>
     </div>
 
     <main class="flex-1 px-3 py-3 space-y-4">
@@ -758,7 +757,97 @@
           </p>
         </div>
 
-        <!-- 2. Accordion Configurazione Collegamenti & Chiavi (Chiuso di default) -->
+        <!-- 2. Accordion Struttura & Pianificazione (Chiuso di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isPlanningExpanded = !isPlanningExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Struttura e Pianificazione</span>
+              <span class="text-[10px] font-mono text-slate-400 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-[2px]">
+                {{ configNumSessions }} Giorni • {{ configNumWeeks }} Settimane • {{ configNumPrograms }} Prog
+              </span>
+            </div>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isPlanningExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
+
+          <!-- Contenuto Accordion Struttura -->
+          <div v-show="isPlanningExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 space-y-4">
+            
+            <!-- Sedute per settimana -->
+            <div class="space-y-1">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">Giorni / Sedute per Settimana</label>
+              <select 
+                v-model.number="configNumSessions" 
+                @change="onPlanningConfigChange"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+              >
+                <option :value="2">2 Giorni (Sedute A, B)</option>
+                <option :value="3">3 Giorni (Sedute A, B, C)</option>
+                <option :value="4">4 Giorni (Sedute A, B, C, D)</option>
+                <option :value="5">5 Giorni (Sedute A, B, C, D, E)</option>
+                <option :value="6">6 Giorni (Sedute A, B, C, D, E, F)</option>
+              </select>
+            </div>
+
+            <!-- Settimane per blocco -->
+            <div class="space-y-1">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">Settimane per Ciclo / Blocco</label>
+              <select 
+                v-model.number="configNumWeeks" 
+                @change="onPlanningConfigChange"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+              >
+                <option :value="4">4 Settimane (1 mese)</option>
+                <option :value="6">6 Settimane</option>
+                <option :value="8">8 Settimane (2 mesi)</option>
+                <option :value="10">10 Settimane</option>
+                <option :value="12">12 Settimane (3 mesi)</option>
+                <option :value="14">14 Settimane (Default)</option>
+                <option :value="16">16 Settimane (4 mesi)</option>
+                <option :value="20">20 Settimane (5 mesi)</option>
+              </select>
+            </div>
+
+            <!-- Numero Programmi -->
+            <div class="space-y-1">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">Numero di Programmi Gestiti</label>
+              <select 
+                v-model.number="configNumPrograms" 
+                @change="onPlanningConfigChange"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+              >
+                <option :value="1">1 Programma</option>
+                <option :value="2">2 Programmi (Default)</option>
+                <option :value="3">3 Programmi</option>
+                <option :value="4">4 Programmi</option>
+                <option :value="5">5 Programmi</option>
+                <option :value="6">6 Programmi</option>
+              </select>
+            </div>
+
+            <!-- Nomi personalizzati programmi -->
+            <div class="space-y-2 pt-2 border-t dark:border-slate-800 border-slate-200">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase font-bold">Nomi Personalizzati Programmi (Opzionali)</label>
+              <div v-for="p in availablePrograms" :key="p" class="flex items-center gap-2">
+                <span class="text-xs font-mono font-bold dark:text-slate-300 text-slate-700 w-16 shrink-0">Prog {{ p }}:</span>
+                <input 
+                  type="text" 
+                  :value="configProgramLabels[p] || ''"
+                  @input="updateProgramLabel(p, $event.target.value)"
+                  :placeholder="'Es. ' + (p === 1 ? 'Accumulo' : p === 2 ? 'Intensificazione' : p === 3 ? 'Peaking' : 'Off-Season') + ' (vuoto = PROG ' + p + ')'"
+                  class="flex-1 dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none focus:border-sky-500"
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 3. Accordion Configurazione Collegamenti & Chiavi (Chiuso di default) -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
           <button 
             @click="isConfigExpanded = !isConfigExpanded"
@@ -1291,6 +1380,64 @@
         const selectedProgram = ref(Number(localStorage.getItem('pl_selected_program')) || 1);
         const selectedWeek = ref(Number(localStorage.getItem('pl_selected_week')) || 1);
         const selectedSession = ref(localStorage.getItem('pl_selected_session') || 'A');
+
+        // Configurazione Struttura e Pianificazione
+        const isPlanningExpanded = ref(false);
+        const configNumPrograms = ref(Number(localStorage.getItem('pl_cfg_num_programs')) || 2);
+        const configNumWeeks = ref(Number(localStorage.getItem('pl_cfg_num_weeks')) || 14);
+        const configNumSessions = ref(Number(localStorage.getItem('pl_cfg_num_sessions')) || 4);
+        const configProgramLabels = ref(JSON.parse(localStorage.getItem('pl_cfg_program_labels') || '{}'));
+
+        const availablePrograms = computed(() => {
+          const count = Math.max(1, Math.min(6, configNumPrograms.value));
+          return Array.from({ length: count }, (_, i) => i + 1);
+        });
+
+        const availableWeeks = computed(() => {
+          const count = Math.max(1, Math.min(24, configNumWeeks.value));
+          return Array.from({ length: count }, (_, i) => i + 1);
+        });
+
+        const availableSessions = computed(() => {
+          const all = ['A', 'B', 'C', 'D', 'E', 'F'];
+          const count = Math.max(1, Math.min(all.length, configNumSessions.value));
+          return all.slice(0, count);
+        });
+
+        function getProgramLabel(p) {
+          const custom = configProgramLabels.value[p] && configProgramLabels.value[p].trim();
+          return custom ? `P${p}: ${custom}` : `PROG ${p}`;
+        }
+
+        function getProgramBannerLabel(p) {
+          const custom = configProgramLabels.value[p] && configProgramLabels.value[p].trim();
+          return custom ? `Programma ${p} - ${custom}` : `Programma ${p}`;
+        }
+
+        function onPlanningConfigChange() {
+          localStorage.setItem('pl_cfg_num_programs', String(configNumPrograms.value));
+          localStorage.setItem('pl_cfg_num_weeks', String(configNumWeeks.value));
+          localStorage.setItem('pl_cfg_num_sessions', String(configNumSessions.value));
+          localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
+
+          // Bounds checking
+          if (selectedProgram.value > configNumPrograms.value) {
+            selectedProgram.value = 1;
+          }
+          if (selectedWeek.value > configNumWeeks.value) {
+            selectedWeek.value = 1;
+          }
+          if (!availableSessions.value.includes(selectedSession.value)) {
+            selectedSession.value = 'A';
+          }
+
+          onFilterChange();
+        }
+
+        function updateProgramLabel(p, val) {
+          configProgramLabels.value[p] = val;
+          localStorage.setItem('pl_cfg_program_labels', JSON.stringify(configProgramLabels.value));
+        }
 
         const exercises = ref([]);
         const currentPlan = reactive({
@@ -2941,7 +3088,19 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           getIcon,
           getCategoryLabel,
           getCategoryBadgeText,
-          getCategoryHeaderBg
+          getCategoryHeaderBg,
+          isPlanningExpanded,
+          configNumPrograms,
+          configNumWeeks,
+          configNumSessions,
+          configProgramLabels,
+          availablePrograms,
+          availableWeeks,
+          availableSessions,
+          getProgramLabel,
+          getProgramBannerLabel,
+          onPlanningConfigChange,
+          updateProgramLabel
         };
       }
     }).mount('#app');
