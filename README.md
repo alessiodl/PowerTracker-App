@@ -47,8 +47,9 @@ Consente di pianificare la scheda di allenamento per il blocco attivo:
 * **Selettore Sessione**: In alto seleziona **Programma** (1-6 con etichette personalizzate opzionali), **Settimana** (da 4 a 20) e **Seduta** (da A fino a F, configurabili a piacere).
 * **Definizione Esercizi**: Inserisci gli esercizi dal menu a tendina o aggiungine di nuovi; imposta il target (es. `4x5 @70%` o `1x1 @8 + 3x4 @75%`), il recupero previsto e le note tecniche.
 * **Importazione Scheda con IA**:
-  * `Carica immagine`: Scatta una foto o carica uno screenshot della tua scheda cartacea/digitale.
-  * `Incolla Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
+  * `Camera`: Scatta direttamente una foto della scheda cartacea con la fotocamera posteriore dello smartphone.
+  * `Galleria`: Carica una foto o screenshot salvato nei file/galleria del dispositivo.
+  * `Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
   * L'IA (Gemini Flash) estrarrà automaticamente esercizi, categorie, carichi target e note.
 * **Riordino**: Usa le frecce `▲` / `▼` per organizzare la sequenza degli esercizi.
 * **Pulsanti Azione**: **`SALVA SCHEDA`** (verde) per salvare in locale e **`SVUOTA`** (rosso tenue) per azzerare la pianificazione del giorno.

@@ -180,30 +180,49 @@
         
         <!-- Action Header Card -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3 border dark:border-slate-700/70 border-slate-300 shadow-sm space-y-2.5">
-          <div class="grid grid-cols-2 gap-2">
-            <!-- AI Image Import Button -->
-            <label class="flex-1 justify-center px-2.5 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm text-center">
-              <img v-if="!isImportingImage" :src="getIcon('carica_immagine')" class="w-3.5 h-3.5 object-contain" alt="" />
-              <span v-if="!isImportingImage">Carica immagine</span>
-              <span v-else class="animate-pulse">⏳ Analisi IA...</span>
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-[11px] uppercase tracking-wider text-sky-600 dark:text-sky-400">Importa scheda</span>
+            <span v-if="isImportingImage" class="text-[10px] font-mono font-bold text-amber-500 animate-pulse">Analisi IA in corso...</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <!-- 1. Camera (Direct capture) -->
+            <label 
+              class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm text-center"
+              :class="{ 'opacity-50 pointer-events-none': isImportingImage }"
+              title="Scatta una foto della scheda con la fotocamera"
+            >
+              <img :src="getIcon('carica_immagine')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span>Camera</span>
+              <input type="file" accept="image/*" capture="environment" @change="handleImageUpload" class="hidden" :disabled="isImportingImage" />
+            </label>
+
+            <!-- 2. Galleria (File picker) -->
+            <label 
+              class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm text-center"
+              :class="{ 'opacity-50 pointer-events-none': isImportingImage }"
+              title="Carica una foto dalla galleria o dai file"
+            >
+              <img :src="getIcon('carica_immagine')" class="w-3.5 h-3.5 object-contain" alt="" />
+              <span>Galleria</span>
               <input type="file" accept="image/*" @change="handleImageUpload" class="hidden" :disabled="isImportingImage" />
             </label>
 
-            <!-- Clipboard Paste Button -->
+            <!-- 3. Appunti (Clipboard) -->
             <button 
               @click="handleClipboardPaste" 
               :disabled="isImportingImage"
-              class="flex-1 justify-center px-2.5 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1.5 transition-all shadow-sm"
-              title="Incolla immagine negli appunti (o usa Ctrl+V / Cmd+V)"
+              class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all shadow-sm disabled:opacity-50"
+              title="Incolla immagine o testo dagli appunti (o usa Ctrl+V)"
             >
               <img :src="getIcon('incolla_appunti')" class="w-3.5 h-3.5 object-contain" alt="" />
-              <span>Incolla Appunti</span>
+              <span>Appunti</span>
             </button>
           </div>
 
           <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed dark:bg-slate-950 bg-slate-100 p-2 rounded-[2px] border dark:border-slate-800 border-slate-200 flex items-start gap-1.5">
             <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
-            <span>Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi caricare uno screenshot della tua scheda o incollarlo con Ctrl+V.</span>
+            <span>Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi scattare una foto, caricarla dalla galleria o incollare la scheda con Ctrl+V.</span>
           </p>
         </div>
 
