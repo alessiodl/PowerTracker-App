@@ -877,6 +877,45 @@
           </div>
         </div>
 
+        <!-- 3. Accordion Domande Frequenti & Guida Rapida (Chiuso di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isFaqExpanded = !isFaqExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Domande Frequenti & Guida</span>
+              <span class="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-[2px]">
+                FAQ
+              </span>
+            </div>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isFaqExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
+
+          <!-- Contenuto FAQ -->
+          <div v-show="isFaqExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 divide-y dark:divide-slate-800 divide-slate-200">
+            <div v-for="(item, idx) in faqList" :key="idx" class="py-2.5 first:pt-1 last:pb-1">
+              <button 
+                @click="toggleFaqItem(idx)"
+                class="w-full flex items-start justify-between gap-2 text-left text-xs font-bold dark:text-slate-200 text-slate-800 hover:text-sky-500 dark:hover:text-sky-400 transition-colors cursor-pointer"
+              >
+                <span>{{ item.q }}</span>
+                <span class="font-mono text-xs text-sky-500 dark:text-sky-400 font-bold shrink-0 mt-0.5">
+                  {{ expandedFaqItems[idx] ? '−' : '+' }}
+                </span>
+              </button>
+              <div 
+                v-show="expandedFaqItems[idx]" 
+                class="mt-2 text-[11px] leading-relaxed dark:text-slate-400 text-slate-600 font-sans whitespace-pre-line pl-2.5 border-l-2 dark:border-sky-500/50 border-sky-400"
+              >
+                {{ item.a }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Danger Zone: Reset Applicazione -->
         <div class="bg-rose-600/10 dark:bg-rose-950/20 border border-rose-500/30 rounded-[2px] p-3.5 shadow-sm space-y-3">
           <div>
@@ -2758,6 +2797,47 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           );
         }
 
+        // ==========================================
+        // FAQ & GUIDA RAPIDA
+        // ==========================================
+        const isFaqExpanded = ref(false);
+        const expandedFaqItems = ref({});
+
+        function toggleFaqItem(idx) {
+          expandedFaqItems.value[idx] = !expandedFaqItems.value[idx];
+        }
+
+        const faqList = [
+          {
+            q: "Posso registrare gli allenamenti in palestra senza connessione internet?",
+            a: "Sì, al 100%. L'app è concepita con architettura Offline-First: tutte le serie, i carichi, i recuperi e le note vengono salvati istantaneamente nella memoria interna del tuo dispositivo (IndexedDB).\nQuando torni sotto rete Wi-Fi o connessione dati, ti basta aprire la scheda SYNC e premere 'Sincronizza Ora' per aggiornare il tuo Google Sheet."
+          },
+          {
+            q: "Come gestisco la sincronizzazione se uso più dispositivi (es. telefono palestra offline e telefono principale)?",
+            a: "PowerTrack gestisce automaticamente i conflitti confrontando data e ora dell'ultima modifica (Last-Write-Wins).\nQuando rientri dalla palestra con il telefono offline e lo colleghi al Wi-Fi, premi 'Sincronizza Ora': i nuovi allenamenti svolti verranno inviati a Google Sheets e le eventuali modifiche fatte dal telefono principale o dal PC verranno integrate in automatico."
+          },
+          {
+            q: "Dove posso consultare i miei allenamenti da PC in modo pulito e senza codici tecnici?",
+            a: "All'interno del tuo Foglio Google, lo script genera e aggiorna automaticamente la scheda 'Analisi'.\nQuesto foglio è formattato per la lettura umana ed esclude automaticamente tutte le sedute cancellate e le colonne tecniche (UUID, timestamp grezzi). È la base ideale per creare grafici di progressione carichi e tabelle pivot."
+          },
+          {
+            q: "Cosa significa la colonna 'Eliminato = Sì' nel foglio Allenamenti?",
+            a: "È un segnaposto tecnico di sicurezza (soft-delete). Serve per avvisare gli altri tuoi dispositivi (che magari sono offline in quel momento) che quella determinata seduta è stata cancellata, impedendo che al loro ritorno online la re-invino allo Sheet come se fosse nuova."
+          },
+          {
+            q: "Come posso importare una nuova scheda usando l'Intelligenza Artificiale?",
+            a: "Nella tab 'SCHEDA', seleziona Programma, Settimana e Seduta desiderati. Puoi toccare 'Carica immagine' per scattare una foto o selezionare uno screenshot della tua scheda, oppure 'Incolla appunti' (anche premendo Ctrl+V da tastiera).\nL'IA di Google Gemini estrarrà automaticamente esercizi, categorie, carichi target e note. Ricorda di configurare prima la tua API Key Gemini gratuita nel box 'Configurazione e Chiavi'."
+          },
+          {
+            q: "Cosa accade quando premo il pulsante RESET?",
+            a: "Il reset svuota schede, allenamenti registrati e storico dalla memoria locale del dispositivo. L'azzeramento verrà propagato a Google Sheets al successivo 'Sincronizza Ora'. Il Catalogo degli esercizi non viene toccato e resta sempre intatto."
+          },
+          {
+            q: "Come faccio una pulizia totale e definitiva a inizio stagione?",
+            a: "1. Nel Google Sheet fai 'File > Crea una copia' per salvare un archivio storico;\n2. Premi 'RESET' e poi 'Sincronizza Ora' sul telefono principale e sul telefono da palestra;\n3. Apri il Google Sheet e, nei fogli 'Allenamenti' e 'Schede', seleziona ed elimina tutte le righe dalla riga 2 in giù (lasciando solo la riga 1 di intestazione)."
+          }
+        ];
+
         return {
           activeTab,
           isDarkMode,
@@ -2854,6 +2934,10 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           runConfirm,
           filterExercises,
           requestResetApp,
+          isFaqExpanded,
+          expandedFaqItems,
+          toggleFaqItem,
+          faqList,
           getIcon,
           getCategoryLabel,
           getCategoryBadgeText,
