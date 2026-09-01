@@ -1,69 +1,167 @@
 # PowerTrack - Powerlifting PWA Tracker
 
-PowerTrack è un'applicazione web leggera (Single Page Application) progettata per tracciare e pianificare gli allenamenti di Powerlifting direttamente dal browser. È ottimizzata per l'uso da dispositivi mobili ed è predisposta per il funzionamento offline.
-
-## Funzionalità Principali
-
-* **Gestione Schede Target**: Definizione della progressione settimanale dei carichi e del recupero per ciascun esercizio.
-* **Tracciamento Allenamenti in Tempo Reale**: Registrazione manuale di carichi effettivi, ripetizioni eseguite, tempi di recupero e annotazioni tecniche per ogni serie.
-* **Valutazione Soggettiva RPE/RIR**: Possibilità di annotare manualmente l'indice di sforzo percepito (RPE) o le ripetizioni in riserva (RIR) per ciascun set.
-* **Persistenza Locale**: I dati vengono salvati localmente sul dispositivo tramite IndexedDB (Dexie.js), garantendo il funzionamento anche in assenza di rete.
-* **Importazione Intelligente con Intelligenza Artificiale**: Riconoscimento ed estrazione automatica di esercizi e carichi a partire da screenshot o appunti.
-* **Sincronizzazione Cloud Bidirezionale**: Esportazione ed importazione completa di tutti i dati (esercizi, programmi, storico allenamenti e peso corporeo) su un foglio di calcolo Google Sheets per sincronizzare più dispositivi.
-
-## Installazione ed Utilizzo su Dispositivi Mobili
-
-Poiché l'applicazione è una Progressive Web App (PWA) client-side, per poterla installare sul tuo smartphone deve essere caricata e servita tramite un server. È possibile procedere seguendo **uno dei due metodi alternativi** descritti di seguito.
+PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata per la pianificazione, la registrazione e l'analisi degli allenamenti di Powerlifting. È concepita con un'architettura **Offline-First**, permettendo un utilizzo fluido in palestra anche in totale assenza di connessione internet, con sincronizzazione a due vie su **Google Sheets** e importazione schede tramite **Intelligenza Artificiale (Google Gemini)**.
 
 ---
 
-### Metodo 1: Ospitare l'applicazione online (Scelta consigliata per l'uso quotidiano)
+## 📑 INDICE DEL MANUALE
 
-Questo metodo permette di caricare il file su internet in modo permanente e sicuro, rendendo l'app installabile sul telefono come se fosse un'app nativa.
-
-1. Carica la cartella del progetto su un servizio di hosting statico gratuito con supporto HTTPS (ad esempio Netlify, Vercel o GitHub Pages).
-   * Se utilizzi Netlify, ti basta trascinare la cartella del progetto sulla piattaforma Netlify Drop.
-2. Apri sul browser dello smartphone il link pubblico generato dal servizio di hosting (ad esempio `https://nome-app.netlify.app`).
+1. [Architettura e Installazione](#1-architettura-e-installazione)
+2. [Guida all'Uso delle Funzionalità (Le 6 Schede)](#2-guida-alluso-delle-funzionalità-le-6-schede)
+   * [Tab 1: SCHEDA (Pianificazione Target)](#tab-1-scheda-pianificazione-target)
+   * [Tab 2: ALLENAMENTO (Sessione Live)](#tab-2-allenamento-sessione-live)
+   * [Tab 3: CATALOGO (Esercizi e Categorie)](#tab-3-catalogo-esercizi-e-categorie)
+   * [Tab 4: STORICO (Analisi Sedute e Progressioni)](#tab-4-storico-analisi-sedute-e-progressioni)
+   * [Tab 5: SYNC & CONFIG (Sincronizzazione e Reset)](#tab-5-sync--config-sincronizzazione-e-reset)
+   * [Tab 6: LIVELLI (Standard di Forza e BW)](#tab-6-livelli-standard-di-forza-e-bw)
+3. [Manuale di Sincronizzazione e Multi-Dispositivo](#3-manuale-di-sincronizzazione-e-multi-dispositivo)
+   * [Come funziona la sincronizzazione a 2 vie](#come-funziona-la-sincronizzazione-a-2-vie)
+   * [Gestione di più dispositivi (Telefono palestra offline + PC + Telefono principale)](#gestione-di-più-dispositivi)
+   * [I fogli generati su Google Sheets (`Allenamenti`, `Schede`, `Catalogo`, `Analisi`)](#i-fogli-generati-su-google-sheets)
+   * [Procedura di Reset e Pulizia Totale dello Sheet](#procedura-di-reset-e-pulizia-totale-dello-sheet)
+4. [Setup Tecnico: Google Apps Script Webhook](#4-setup-tecnico-google-apps-script-webhook)
+5. [Setup Funzionalità IA (Google Gemini)](#5-setup-funzionalità-ia-google-gemini)
 
 ---
 
-### Metodo 2: Accesso tramite rete locale Wi-Fi (Scelta ideale per test rapidi senza pubblicare)
+## 1. ARCHITETTURA E INSTALLAZIONE
 
-Questo metodo permette di accedere temporaneamente all'app dal telefono collegandosi al server di sviluppo del tuo computer tramite la stessa rete Wi-Fi di casa.
+### Caratteristiche Tecniche
+* **Database Locale**: IndexedDB tramite Dexie.js (`PowerTrackDB_v2`). I dati risiedono sul dispositivo in modo permanente.
+* **Frontend**: Vue 3 (Composition API CDN) + Tailwind CSS con icone responsive per Dark e Light Theme.
+* **PWA & Service Worker**: Caching locale completo (`sw.js`) per esecuzione immediata offline.
+* **Sicurezza UUID**: Ogni entità possiede un UUID v4 casuale univoco globale e timestamp di modifica (`updatedAt`) con risoluzione conflitti *Last-Write-Wins*.
 
-1. Dal computer, apri il terminale nella cartella del progetto ed avvia un server web locale (ad esempio, eseguendo `python -m http.server 8000`).
-2. Individua l'indirizzo IP locale del tuo computer (es. `192.168.1.15`).
-3. Apri il browser dello smartphone e digita l'indirizzo IP seguito dalla porta del server (es. `http://192.168.1.15:8000`).
+### Come installare l'App sullo Smartphone
+1. Carica la cartella del progetto su un hosting HTTPS gratuito (es. **GitHub Pages**, **Netlify** o **Vercel**).
+2. Apri il link dal browser dello smartphone:
+   * **iOS (Safari)**: Tocca l'icona di condivisione $\rightarrow$ seleziona **"Aggiungi alla schermata Home"**.
+   * **Android (Chrome)**: Tocca i tre puntini $\rightarrow$ seleziona **"Installa app"** o **"Aggiungi a schermata Home"**.
 
 ---
 
-### Come salvare l'applicazione sulla Schermata Home
+## 2. GUIDA ALL'USO DELLE FUNZIONALITÀ (LE 6 SCHEDE)
 
-Una volta aperto il link con uno dei due metodi precedenti:
-* **iOS (Safari)**: Tocca l'icona di condivisione (quadrato con freccia verso l'alto) e seleziona "Aggiungi alla schermata Home". Assicurati che l'opzione "Apri come app web" sia spuntata.
-* **Android (Chrome)**: Tocca l'icona dei tre puntini in alto a destra e seleziona "Aggiungi a schermata Home" o "Installa app".
+### Tab 1: SCHEDA (Pianificazione Target)
+Consente di pianificare la scheda di allenamento per il blocco attivo:
+* **Selettore Sessione**: In alto seleziona **Programma** (1 o 2), **Settimana** (1-14) e **Seduta** (A, B, C, D).
+* **Definizione Esercizi**: Inserisci gli esercizi dal menu a tendina o aggiungine di nuovi; imposta il target (es. `4x5 @70%` o `1x1 @8 + 3x4 @75%`), il recupero previsto e le note tecniche.
+* **Importazione Scheda con IA**:
+  * `📸 Carica immagine`: Scatta una foto o carica uno screenshot della tua scheda cartacea/digitale.
+  * `📋 Incolla Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
+  * L'IA (Gemini Flash) estrarrà automaticamente esercizi, categorie, carichi target e note.
+* **Riordino**: Usa le frecce `▲` / `▼` per organizzare la sequenza degli esercizi.
+* **Pulsanti Azione**: **`SALVA SCHEDA`** (verde) per salvare in locale e **`SVUOTA`** (rosso tenue) per azzerare la pianificazione del giorno.
 
-## Configurazione Funzioni AI (Google Gemini)
+---
 
-L'importazione tramite immagine e appunti si appoggia al modello Gemini 3.6 Flash. Per abilitare la funzionalità:
+### Tab 2: ALLENAMENTO (Sessione Live)
+La schermata principale utilizzata durante l'allenamento in palestra:
+* **Caricamento Automatico**: Mostra gli esercizi previsti dalla Scheda Target per il giorno selezionato. Se vuoto, permette di ricaricarli con un tocco tramite `Ricarica Scheda`.
+* **Data & Ripetizione**: Imposta la data dell'allenamento e contrassegna `Ripetuto` se esegui una seduta supplementare/recupero.
+* **Registrazione Serie**:
+  * **Carico (kg)** e **Ripetizioni (Reps)** effettivamente sollevate.
+  * **RPE / RIR**: Inserisci lo sforzo percepito (es. `8`, `8.5`, `9`).
+  * **E1RM Live**: L'app calcola in tempo reale il massimale stimato (*Estimated 1RM*) per la serie tramite formula Brzycki / RPE table.
+  * **Timer Recupero Rapido**: Tasti rapidi (1m, 1.5m, 2m, 3m, 4m, 5m) con conto alla rovescia sonoro/visivo.
+  * **Note per Set**: Icona dedicata per appunti tecnici su singole serie (es. *"cintura stretta"*, *"piede scivolato"*).
+* **Pulsanti Azione**: **`CONCLUDI E SINCRONIZZA`** (verde) per registrare la seduta nello storico e avviare la sync, **`SVUOTA`** (rosso) per cancellare i dati della sessione in corso.
 
-1. Accedi a [Google AI Studio](https://aistudio.google.com/).
-2. Genera una chiave API personale (API Key) gratuita.
-3. Apri l'applicazione, accedi alla scheda "SYNC & STORICO" ed inserisci la chiave nel campo "API Key per funzionalità AI".
-4. Fai clic su "Salva API Key". La chiave verrà salvata localmente nel browser (localStorage).
+---
 
-## Sincronizzazione con Google Sheets (2-Way Sync & Unica Fonte di Verità)
+### Tab 3: CATALOGO (Esercizi e Categorie)
+Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
+* **Blocco 1 - Fondamentale**: Squat, Panca, Stacco e varianti primarie.
+* **Blocco 2 - Variante**: Varianti tecniche (Panca fermo 3s, Squat con pausa, Board press, ecc.).
+* **Blocco 3 - Complementari**: Trazioni, Dip, Bicipiti, Tricipiti, Spalle, Core.
+* **Funzionalità**:
+  * **Controllo Anti-duplicati**: Impedisce l'inserimento di doppioni case-insensitive.
+  * **Riordinamento**: Frecce `▲` / `▼` per ordinare gli esercizi per ciascuna categoria.
+  * **Salvataggio**: Il tasto **`SALVA CATALOGO`** in fondo salva le modifiche in locale.
 
-L'applicazione utilizza un'architettura **Offline-First bidirezionale**:
-* I dati vengono salvati istantaneamente in locale su IndexedDB con identificativi globali unici (UUID) e timestamp di modifica (`updatedAt`).
-* La sincronizzazione a 2 vie avviene **automaticamente** all'avvio dell'app, al ritorno della connessione internet o dopo ogni salvataggio.
-* Un **unico pulsante "Sincronizza Ora"** permette di sincronizzare manualmente in qualsiasi momento senza rischio di sovrascritture o perdite di dati (risoluzione dei conflitti automatica con logica *Last-Write-Wins*).
+---
 
-### Configurazione di Google Apps Script
+### Tab 4: STORICO (Analisi Sedute e Progressioni)
+* **Ricerca e Storico per Esercizio**: Seleziona o cerca un esercizio (es. *"Squat"*) per vedere l'elenco cronologico di tutte le volte che è stato eseguito, con carichi, serie e miglior E1RM registrato.
+* **Elenco Sedute Registrate**:
+  * Badge stato: **`✓`** (Sincronizzato sul Cloud) o **`LOCALE`** (in attesa di connessione).
+  * `Carica`: Riapre la seduta nella tab Allenamento per eventuali modifiche/correzioni.
+  * `Dati`: Ispezione del payload JSON puro inviato a Google Sheets, con tasto `Copia JSON`.
+  * `Elimina` (rosso): Elimina la seduta dallo storico (con popup di conferma).
 
-1. Crea un nuovo Foglio Google.
-2. Fai clic su "Estensioni" nel menu superiore e seleziona "Apps Script".
-3. Incolla il seguente codice nell'editor di Apps Script, sostituendo qualsiasi codice preesistente:
+---
+
+### Tab 5: SYNC & CONFIG (Sincronizzazione e Reset)
+* **Stato Sincronizzazione**: Visualizza l'orario dell'ultima sync e il contatore delle modifiche in sospeso (*"X elementi in attesa"*).
+* **Pulsante `SINCRONIZZA ORA`**: Esegue la sincronizzazione manuale a 2 vie istantanea con Google Sheets.
+* **Configurazione e Chiavi (Sottomenu Collassabile)**:
+  * Box chiuso di default per evitare tocchi accidentali.
+  * **Modalità Sola Lettura**: Mostra i campi bloccati e mascherati (`••••••••`).
+  * Tasto **`Modifica`** per sbloccare l'input e mostrare i pulsanti **`Salva`** e **`Annulla`**.
+  * Gestisce: URL del Webhook Google Apps Script e API Key Google Gemini.
+* **Zona di Pericolo - Reset Applicazione**:
+  * Box in evidenza rossa con pulsante **`RESET`**.
+  * Richiede conferma esplicita e azzera schede, allenamenti e storico in locale.
+
+---
+
+### Tab 6: LIVELLI (Standard di Forza e BW)
+* **Calcolatore Locale Powerlifting**: Inserisci il tuo peso corporeo (**BW** in kg) per visualizzare la tabella dei livelli di riferimento (I Livello, II Livello, III Livello) per Squat, Panca, Stacco e movimenti correlati.
+* **100% Locale**: I dati del calcolatore restano memorizzati sul dispositivo senza appesantire lo Sheet.
+
+---
+
+## 3. MANUALE DI SINCRONIZZAZIONE E MULTI-DISPOSITIVO
+
+### Come funziona la sincronizzazione a 2 vie
+1. Ogni modifica effettuata sul telefono (salvataggio scheda, fine allenamento, cancellazione) aggiorna il database locale e segna l'elemento come `_dirty: true`.
+2. Quando l'app è online, premendo **`SINCRONIZZA ORA`** (o alla chiusura della seduta), l'app invia il delta a Google Apps Script.
+3. Lo script su Google Sheets esegue il merge con risoluzione automatica dei timestamp (*Last-Write-Wins*) e restituisce lo stato aggiornato all'app.
+
+---
+
+### Gestione di più dispositivi
+*(Scenario tipico: Telefono da palestra rugged spesso offline + Telefono principale connesso + PC/Web)*
+
+* **Perché esiste la colonna `Eliminato = Sì` (Soft-Delete)**:  
+  Se cancelli un allenamento dal PC, Google Sheets lo segna come `Eliminato = Sì`. Quando dopo qualche giorno accendi il telefono rugged in palestra e lo connetti al Wi-Fi, il telefono riceve l'informazione che quell'allenamento è stato eliminato e lo cancella dalla sua memoria locale.  
+  *(Se il foglio eliminasse la riga all'istante, il telefono rugged non saprebbe della cancellazione e re-invierebbe il vecchio allenamento facendolo "risuscitare")*.
+
+---
+
+### I fogli generati su Google Sheets
+Ad ogni sincronizzazione, Google Apps Script mantiene aggiornati **4 fogli di lavoro**:
+
+| Foglio | Scopo | Note di Utilizzo |
+| :--- | :--- | :--- |
+| **`Analisi`** | **Visualizzazione e Analisi al PC** | **100% Pulito.** Contiene solo le sedute e le serie attive, ordinate dalla più recente alla più vecchia. Zero righe cancellate, zero ID tecnici. Perfetto per tabelle pivot e grafici. |
+| **`Allenamenti`** | Database tecnico sedute | Contiene lo storico grezzo completo con colonna `Eliminato` per la sync multi-dispositivo. |
+| **`Schede`** | Database tecnico schede target | Contiene la pianificazione per programma/settimana/seduta. |
+| **`Catalogo`** | Database esercizi | Contiene la lista ufficiale degli esercizi e delle categorie. |
+
+---
+
+### Procedura di Reset e Pulizia Totale dello Sheet
+Quando desideri fare tabula rasa (ad esempio all'avvio di un nuovo anno sportivo o nuovo macrociclo) e vuoi avere anche lo Sheet completamente azzerato:
+
+1. **(Consigliato) Crea una copia di Backup**:  
+   Nel Google Sheet clicca su **File** $\rightarrow$ **Crea una copia** (es. *"PowerTrack_Backup_2025"*).
+2. **Esegui il Reset e Sincronizza su tutti i dispositivi**:  
+   * Sul telefono principale vai in `SYNC` $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
+   * Connetti al Wi-Fi il telefono rugged da palestra $\rightarrow$ premi **`RESET`** (o `SINCRONIZZA ORA`).  
+   *(In questo modo la memoria di tutti i dispositivi è a 0 record)*.
+3. **Pulisci le righe su Google Sheets in 10 secondi**:  
+   * Nel foglio **`Allenamenti`**: seleziona le righe dalla **2 in giù** $\rightarrow$ tasto destro $\rightarrow$ **Elimina righe**.
+   * Nel foglio **`Schede`**: seleziona le righe dalla **2 in giù** $\rightarrow$ tasto destro $\rightarrow$ **Elimina righe**.
+   *(Non eliminare mai la Riga 1 di intestazione)*.
+
+---
+
+## 4. SETUP TECNICO: GOOGLE APPS SCRIPT WEBHOOK
+
+1. Crea un nuovo **Foglio Google**.
+2. Fai clic su **Estensioni** $\rightarrow$ **Apps Script**.
+3. Incolla il seguente codice nel file `Code.gs`, sostituendo qualsiasi testo presente:
 
 ```javascript
 function doPost(e) {
