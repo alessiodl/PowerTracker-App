@@ -601,83 +601,7 @@
 
       </section>
 
-      <!-- ================= TAB 4: LIVELLI DI PERFORMANCE ================= -->
-      <section v-if="activeTab === 'levels'" class="space-y-4">
-        
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
-          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Livelli di Performance</h2>
-          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Riferimento dei fondamentali del powerlifting. I carichi sono espressi in multipli del peso corporeo (BW) o in ripetizioni.</p>
-
-          <div class="flex items-end gap-2 mb-3">
-            <div class="flex-1">
-              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Peso corporeo (kg)</label>
-              <input 
-                type="number" 
-                min="0" 
-                step="0.5" 
-                v-model="userBodyWeight" 
-                placeholder="es. 80" 
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-            <button 
-              @click="calculateLevels" 
-              class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
-            >
-              Calcola
-            </button>
-            <button 
-              @click="resetLevels" 
-              class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
-            >
-              Reset
-            </button>
-          </div>
-
-          <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
-                <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
-                  <th class="px-3 py-2">Esercizio</th>
-                  <th class="px-3 py-2">I livello</th>
-                  <th class="px-3 py-2">II livello</th>
-                  <th class="px-3 py-2">III livello</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
-                <tr v-for="(row, rIdx) in levelTable" :key="row.name" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
-                  <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.name }}</td>
-                  <td class="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">{{ row.l1 }}</td>
-                  <td class="px-3 py-2.5 text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">{{ row.l2 }}</td>
-                  <td class="px-3 py-2.5 text-rose-600 dark:text-rose-400 font-bold whitespace-nowrap">{{ row.l3 }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="mt-3 space-y-1.5">
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-emerald-300 text-emerald-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-emerald-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">I livello</span> &mdash; Il traguardo a cui chiunque si allena dovrebbe mirare.</span>
-            </div>
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-amber-300 text-amber-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-amber-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">II livello</span> &mdash; Raggiungibile da persone con genetica nella media dopo anni di allenamento costante.</span>
-            </div>
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-rose-300 text-rose-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-rose-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">III livello</span> &mdash; Richiede una specializzazione avanzata.</span>
-            </div>
-          </div>
-
-          <div class="mt-3 pt-2.5 border-t dark:border-slate-800 border-slate-200 text-[10px] font-mono dark:text-slate-500 text-slate-400">
-            Fonte: Project Invictus
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ================= TAB 5: STORICO ================= -->
+      <!-- ================= TAB 4: STORICO ================= -->
       <section v-if="activeTab === 'history'" class="space-y-4">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
@@ -768,7 +692,7 @@
 
       </section>
 
-      <!-- ================= TAB 6: SYNC & CONFIG ================= -->
+      <!-- ================= TAB 5: SYNC & CONFIG ================= -->
       <section v-if="activeTab === 'sync'" class="space-y-4">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
@@ -840,6 +764,82 @@
             <button @click="saveGeminiApiKey" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-mono uppercase font-bold rounded-[2px] border dark:border-slate-700 border-slate-300">
               Salva API Key
             </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 6: LIVELLI DI PERFORMANCE ================= -->
+      <section v-if="activeTab === 'levels'" class="space-y-4">
+        
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
+          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Livelli di Performance</h2>
+          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Riferimento dei fondamentali del powerlifting. I carichi sono espressi in multipli del peso corporeo (BW) o in ripetizioni.</p>
+
+          <div class="flex items-end gap-2 mb-3">
+            <div class="flex-1">
+              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Peso corporeo (kg)</label>
+              <input 
+                type="number" 
+                min="0" 
+                step="0.5" 
+                v-model="userBodyWeight" 
+                placeholder="es. 80" 
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+            <button 
+              @click="calculateLevels" 
+              class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+            >
+              Calcola
+            </button>
+            <button 
+              @click="resetLevels" 
+              class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+            >
+              Reset
+            </button>
+          </div>
+
+          <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
+                <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                  <th class="px-3 py-2">Esercizio</th>
+                  <th class="px-3 py-2">I livello</th>
+                  <th class="px-3 py-2">II livello</th>
+                  <th class="px-3 py-2">III livello</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+                <tr v-for="(row, rIdx) in levelTable" :key="row.name" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
+                  <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.name }}</td>
+                  <td class="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">{{ row.l1 }}</td>
+                  <td class="px-3 py-2.5 text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">{{ row.l2 }}</td>
+                  <td class="px-3 py-2.5 text-rose-600 dark:text-rose-400 font-bold whitespace-nowrap">{{ row.l3 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3 space-y-1.5">
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-emerald-300 text-emerald-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-emerald-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">I livello</span> &mdash; Il traguardo a cui chiunque si allena dovrebbe mirare.</span>
+            </div>
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-amber-300 text-amber-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-amber-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">II livello</span> &mdash; Raggiungibile da persone con genetica nella media dopo anni di allenamento costante.</span>
+            </div>
+            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-rose-300 text-rose-700">
+              <span class="w-1.5 h-1.5 rounded-[1px] bg-rose-500 mt-1 shrink-0"></span>
+              <span><span class="font-bold">III livello</span> &mdash; Richiede una specializzazione avanzata.</span>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2.5 border-t dark:border-slate-800 border-slate-200 text-[10px] font-mono dark:text-slate-500 text-slate-400">
+            Fonte: Project Invictus
           </div>
         </div>
 
@@ -971,14 +971,14 @@
     <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1.5 z-40 transition-colors">
       <div class="grid grid-cols-6 gap-1 text-center">
         
-        <!-- Tab 1: SCHEDA TARGET -->
+        <!-- Tab 1: SCHEDA -->
         <button 
           @click="activeTab = 'plan'" 
           class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'plan' ? 'text-amber-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">📋</span>
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">TARGET</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SCHEDA</span>
         </button>
 
         <!-- Tab 2: ALLENAMENTO -->
@@ -988,7 +988,7 @@
           :class="activeTab === 'workout' ? 'text-sky-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <span class="text-base">🏋️</span>
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENA</span>
+          <span class="text-[8px] sm:text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENAMENTO</span>
         </button>
 
         <!-- Tab 3: CATALOGO -->
@@ -1001,17 +1001,7 @@
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
         </button>
 
-        <!-- Tab 4: LIVELLI -->
-        <button 
-          @click="activeTab = 'levels'" 
-          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
-        >
-          <span class="text-base">📈</span>
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
-        </button>
-
-        <!-- Tab 5: STORICO -->
+        <!-- Tab 4: STORICO -->
         <button 
           @click="activeTab = 'history'" 
           class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
@@ -1021,7 +1011,7 @@
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">STORICO</span>
         </button>
 
-        <!-- Tab 6: SYNC & CONFIG -->
+        <!-- Tab 5: SYNC & CONFIG -->
         <button 
           @click="activeTab = 'sync'" 
           class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
@@ -1029,6 +1019,16 @@
         >
           <span class="text-base">⚡</span>
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
+        </button>
+
+        <!-- Tab 6: LIVELLI -->
+        <button 
+          @click="activeTab = 'levels'" 
+          class="flex flex-col items-center py-1.5 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <span class="text-base">📈</span>
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
         </button>
 
       </div>
