@@ -1820,11 +1820,12 @@
           }
 
           records.sort((a, b) => {
-            const d = String(a.date).localeCompare(String(b.date));
-            if (d !== 0) return d;
-            return String(a.program).localeCompare(String(b.program)) || 
-                   String(a.week).localeCompare(String(b.week)) ||
-                   String(a.session).localeCompare(String(b.session));
+            const timeA = new Date(a.date).getTime() || 0;
+            const timeB = new Date(b.date).getTime() || 0;
+            if (timeB !== timeA) return timeB - timeA;
+            return String(b.program).localeCompare(String(a.program)) || 
+                   String(b.week).localeCompare(String(a.week)) ||
+                   String(b.session).localeCompare(String(a.session));
           });
 
           historyExerciseName.value = exName;
