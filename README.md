@@ -81,7 +81,6 @@ function doPost(e) {
     var sheetCat = ss.getSheetByName("Catalogo") || ss.insertSheet("Catalogo");
     var sheetSch = ss.getSheetByName("Schede") || ss.insertSheet("Schede");
     var sheetAll = ss.getSheetByName("Allenamenti") || ss.insertSheet("Allenamenti");
-    var sheetSet = ss.getSheetByName("Impostazioni") || ss.insertSheet("Impostazioni");
 
     if (action === "sync") {
       // ==========================================
@@ -348,31 +347,13 @@ function doPost(e) {
         sheetAll.getRange(2, 1, logOutRows.length, 17).setValues(logOutRows);
       }
 
-      // ==========================================
-      // 4. IMPOSTAZIONI
-      // ==========================================
-      var finalSettings = { bodyWeight: "" };
-      if (payload.userSettings && payload.userSettings.bodyWeight !== undefined) {
-        finalSettings.bodyWeight = payload.userSettings.bodyWeight;
-        sheetSet.clear();
-        sheetSet.appendRow(["Chiave", "Valore", "DataAggiornamento"]);
-        sheetSet.getRange(1, 1, 1, 3).setFontWeight("bold");
-        sheetSet.appendRow(["bodyWeight", payload.userSettings.bodyWeight || "", serverTime]);
-      } else if (sheetSet.getLastRow() > 1) {
-        var setRows = sheetSet.getRange(2, 1, sheetSet.getLastRow() - 1, 3).getValues();
-        for (var i = 0; i < setRows.length; i++) {
-          if (setRows[i][0] === "bodyWeight") finalSettings.bodyWeight = setRows[i][1];
-        }
-      }
-
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
         serverTime: serverTime,
         data: {
           exercises: catList,
           templates: tplList,
-          workoutLogs: logList,
-          userSettings: finalSettings
+          workoutLogs: logList
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }
