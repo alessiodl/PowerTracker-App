@@ -1,10 +1,32 @@
-const CACHE_NAME = 'powertrack-cache-v19';
+const CACHE_NAME = 'powertrack-cache-v20';
 
 const ASSETS_LOCAL = [
   './',
   'index.html',
   'manifest.json',
-  'icon.svg'
+  'icon.svg',
+  'icons/black_for_light_theme/allenamento.png',
+  'icons/black_for_light_theme/carica_immagine.png',
+  'icons/black_for_light_theme/catalogo.png',
+  'icons/black_for_light_theme/incolla_appunti.png',
+  'icons/black_for_light_theme/livelli.png',
+  'icons/black_for_light_theme/moon.png',
+  'icons/black_for_light_theme/scheda.png',
+  'icons/black_for_light_theme/storico.png',
+  'icons/black_for_light_theme/suggerimento.png',
+  'icons/black_for_light_theme/sun.png',
+  'icons/black_for_light_theme/sync.png',
+  'icons/white_for_dark_theme/allenamento.png',
+  'icons/white_for_dark_theme/carica_immagine.png',
+  'icons/white_for_dark_theme/catalogo.png',
+  'icons/white_for_dark_theme/incolla_appunti.png',
+  'icons/white_for_dark_theme/livelli.png',
+  'icons/white_for_dark_theme/moon.png',
+  'icons/white_for_dark_theme/scheda.png',
+  'icons/white_for_dark_theme/storico.png',
+  'icons/white_for_dark_theme/suggerimento.png',
+  'icons/white_for_dark_theme/sun.png',
+  'icons/white_for_dark_theme/sync.png'
 ];
 
 const ASSETS_CORS = [
