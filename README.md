@@ -145,10 +145,11 @@ Quando desideri fare tabula rasa (ad esempio all'avvio di un nuovo anno sportivo
 
 1. **(Consigliato) Crea una copia di Backup**:  
    Nel Google Sheet clicca su **File** $\rightarrow$ **Crea una copia** (es. *"PowerTrack_Backup_2025"*).
-2. **Esegui il Reset e Sincronizza su tutti i dispositivi**:  
+2. **Esegui il Reset e Sincronizza su tutti i dispositivi e browser**:  
    * Sul telefono principale vai in `SYNC` $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
-   * Connetti al Wi-Fi il telefono rugged da palestra $\rightarrow$ premi **`RESET`** (o `SINCRONIZZA ORA`).  
-   *(In questo modo la memoria di tutti i dispositivi è a 0 record)*.
+   * Connetti al Wi-Fi il telefono da palestra (rugged) $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
+   * Sul browser del PC / Web App (se utilizzata) $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.  
+   *(In questo modo la memoria locale di ogni dispositivo e browser è azzerata a 0 record)*.
 3. **Pulisci le righe su Google Sheets in 10 secondi**:  
    * Nel foglio **`Allenamenti`**: seleziona le righe dalla **2 in giù** $\rightarrow$ tasto destro $\rightarrow$ **Elimina righe**.
    * Nel foglio **`Schede`**: seleziona le righe dalla **2 in giù** $\rightarrow$ tasto destro $\rightarrow$ **Elimina righe**.
