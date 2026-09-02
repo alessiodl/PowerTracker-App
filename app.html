@@ -199,7 +199,7 @@
             <span v-if="isImportingImage" class="text-[10px] font-mono font-bold text-amber-500 animate-pulse">Analisi IA in corso...</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-1.5">
+          <div class="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
             <!-- 1. Camera (Direct capture) -->
             <label 
               class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm text-center"
@@ -222,11 +222,11 @@
               <input type="file" accept="image/*" @change="handleImageUpload" class="hidden" :disabled="isImportingImage" />
             </label>
 
-            <!-- 3. Appunti (Clipboard) -->
+            <!-- 3. Appunti (Clipboard) - Attivo solo su Desktop / PC (lg: >= 1024px) -->
             <button 
               @click="handleClipboardPaste" 
               :disabled="isImportingImage"
-              class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all shadow-sm disabled:opacity-50"
+              class="hidden lg:flex justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 items-center justify-center gap-1 transition-all shadow-sm disabled:opacity-50"
               title="Incolla immagine o testo dagli appunti (o usa Ctrl+V)"
             >
               <img :src="getIcon('incolla_appunti')" class="w-3.5 h-3.5 object-contain" alt="" />
