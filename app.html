@@ -161,17 +161,30 @@
       </div>
     </header>
 
-    <!-- SESSION BANNER TITLE -->
-    <div class="dark:bg-slate-900/90 bg-slate-800 text-white py-2 px-4 text-center border-b border-slate-800 shadow-inner">
-      <div class="flex items-center justify-center gap-2">
-        <h2 class="text-sm md:text-base font-black uppercase tracking-widest font-mono">
-          SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
-        </h2>
-        <span v-if="isPlanningConfigPendingSync" class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[2px] bg-amber-500/20 text-amber-300 border border-amber-500/40" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
-          Struttura non sincronizzata
-        </span>
+    <!-- SESSION BANNER TITLE CON PALESTRA_MOBILE.JPG -->
+    <div class="relative overflow-hidden py-1.5 px-3 text-center border-b dark:border-slate-800 border-slate-300 shadow-md">
+      
+      <!-- Immagine di Sfondo con Maschera Leggera -->
+      <div class="absolute inset-0 z-0">
+        <img src="palestra_mobile.jpg" alt="" class="w-full h-full object-cover object-center contrast-[1.05]" />
+        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/60"></div>
       </div>
-      <p class="text-[10px] text-slate-300 font-mono tracking-wide mt-0.5">{{ getProgramBannerLabel(selectedProgram) }}</p>
+
+      <!-- Contenuto Testuale in Primo Piano -->
+      <div class="relative z-10 flex flex-col items-center justify-center">
+        <div class="flex items-center justify-center gap-1.5">
+          <h2 class="text-xs sm:text-sm font-black uppercase tracking-widest font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+            SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
+          </h2>
+          <span v-if="isPlanningConfigPendingSync" class="text-[8.5px] font-mono font-bold uppercase px-1 py-0.2 rounded-[2px] bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-sm" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
+            Non sync
+          </span>
+        </div>
+        <p class="text-[10px] text-sky-300 font-mono font-bold tracking-wide mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+          {{ getProgramBannerLabel(selectedProgram) }}
+        </p>
+      </div>
+
     </div>
 
     <main class="flex-1 px-3 py-3 space-y-4">
