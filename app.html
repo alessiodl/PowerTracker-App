@@ -785,8 +785,12 @@
             :disabled="isSyncingCloud || !webhookUrl"
             class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2"
           >
-            <span v-if="isSyncingCloud" class="animate-spin">🔄</span>
-            <span>{{ isSyncingCloud ? 'Sincronizzazione a due vie in corso...' : 'Sincronizza Ora' }}</span>
+            <div v-if="isSyncingCloud" class="flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.32s;"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.16s;"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce"></span>
+            </div>
+            <span>{{ isSyncingCloud ? 'Sincronizzazione in corso...' : 'Sincronizza Ora' }}</span>
           </button>
 
           <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed flex items-start gap-1.5">
@@ -1350,11 +1354,32 @@
 
     <!-- FULLSCREEN SYNCING BLOCKER MODAL -->
     <div v-if="isSyncingCloud" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
-      <div class="dark:bg-[#1c202c] bg-white p-6 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-4 max-w-xs w-full">
-        <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="dark:bg-[#1c202c] bg-white p-5 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-3 max-w-xs w-full">
+        <!-- Compact 3-dot bouncing animation -->
+        <div class="flex items-center justify-center gap-1.5 py-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: -0.32s;"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: -0.16s;"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce"></span>
+        </div>
         <div class="space-y-1">
           <h3 class="font-bold text-sm dark:text-slate-100 text-slate-900 tracking-tight">Sincronizzazione in corso...</h3>
-          <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Attendere qualche secondo</p>
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Aggiornamento Google Sheets</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULLSCREEN AI ANALYSIS BLOCKER MODAL -->
+    <div v-if="isImportingImage" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+      <div class="dark:bg-[#1c202c] bg-white p-5 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-3 max-w-xs w-full">
+        <!-- Compact 3-dot bouncing animation -->
+        <div class="flex items-center justify-center gap-1.5 py-1">
+          <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: -0.32s;"></span>
+          <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay: -0.16s;"></span>
+          <span class="w-2 h-2 rounded-full bg-purple-500 animate-bounce"></span>
+        </div>
+        <div class="space-y-1">
+          <h3 class="font-bold text-sm dark:text-slate-100 text-slate-900 tracking-tight">Analisi con IA in corso...</h3>
+          <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Estrazione scheda con Gemini</p>
         </div>
       </div>
     </div>
