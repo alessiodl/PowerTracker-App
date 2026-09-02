@@ -55,7 +55,7 @@
           },
           fontFamily: {
             mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+            sans: ['Barlow Semi Condensed', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
           }
         }
       }
@@ -69,11 +69,11 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Barlow Semi Condensed', sans-serif;
       -webkit-tap-highlight-color: transparent;
       transition: background-color 0.2s ease, color 0.2s ease;
     }
@@ -89,6 +89,7 @@
     }
 
     input, select, textarea {
+      font-family: inherit;
       font-size: 13px !important;
     }
 
@@ -147,7 +148,7 @@
       </div>
 
       <!-- Row 2: Session Selector (full width) -->
-      <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs font-mono shadow-sm">
+      <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs shadow-sm">
         <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
           <option v-for="p in availablePrograms" :key="p" :value="p" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ getProgramLabel(p) }}</option>
         </select>
@@ -677,7 +678,7 @@
 
             <select 
               @change="openExerciseHistoryFromSelect($event)" 
-              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 cursor-pointer font-mono"
+              class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-200 text-slate-800 border dark:border-slate-700 border-slate-300 rounded-[2px] p-2 text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
             >
               <option value="">
                 {{ filteredExerciseNames.length === 0 ? 'Nessun esercizio corrispondente' : `Seleziona un esercizio (${filteredExerciseNames.length})...` }}
@@ -810,7 +811,7 @@
               <select 
                 v-model.number="configNumSessions" 
                 @change="onPlanningConfigChange"
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none cursor-pointer"
               >
                 <option :value="2">2 Giorni (Sedute A, B)</option>
                 <option :value="3">3 Giorni (Sedute A, B, C)</option>
@@ -826,7 +827,7 @@
               <select 
                 v-model.number="configNumWeeks" 
                 @change="onPlanningConfigChange"
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none cursor-pointer"
               >
                 <option :value="4">4 Settimane (1 mese)</option>
                 <option :value="6">6 Settimane</option>
@@ -845,7 +846,7 @@
               <select 
                 v-model.number="configNumPrograms" 
                 @change="onPlanningConfigChange"
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 font-mono focus:outline-none cursor-pointer"
+                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none cursor-pointer"
               >
                 <option :value="1">1 Programma</option>
                 <option :value="2">2 Programmi (Default)</option>
