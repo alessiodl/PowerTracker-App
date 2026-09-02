@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powertrack-cache-v33';
+const CACHE_NAME = 'powertrack-cache-v34';
 
 const ASSETS_LOCAL = [
   './',
