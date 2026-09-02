@@ -579,7 +579,7 @@
             @click="saveWorkoutSession" 
             class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
           >
-            <span>Concludi e Sincronizza</span>
+            <span>Concludi Allenamento</span>
           </button>
           <button 
             v-if="currentWorkout.performedExercises.length > 0"
@@ -1416,10 +1416,15 @@
         <!-- Tab 6: SYNC & CONFIG -->
         <button 
           @click="activeTab = 'sync'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          class="relative flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'sync' ? 'text-teal-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
-          <img :src="getIcon('sync')" class="w-5 h-5 object-contain" alt="Sync" />
+          <div class="relative flex items-center justify-center">
+            <img :src="getIcon('sync')" class="w-5 h-5 object-contain" alt="Sync" />
+            <span v-if="pendingChangesCount > 0" class="absolute -top-1 -right-2 px-1 min-w-[13px] h-[13px] flex items-center justify-center text-[8px] font-mono font-black bg-amber-500 text-slate-950 rounded-full shadow-sm">
+              {{ pendingChangesCount > 99 ? '99+' : pendingChangesCount }}
+            </span>
+          </div>
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
         </button>
 
@@ -1612,16 +1617,6 @@
         const tempWebhookUrl = ref(webhookUrl.value);
         const isEditingGeminiKey = ref(!geminiApiKey.value);
         const tempGeminiKey = ref(geminiApiKey.value);
-
-        // Debounce timer per auto-sync
-        let syncDebounceTimer = null;
-        function triggerDebouncedSync(delay = 2000) {
-          updatePendingCount();
-          if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-          syncDebounceTimer = setTimeout(() => {
-            syncWithCloud({ silent: true });
-          }, delay);
-        }
 
         // Formattazione data ultima sync
         const lastSyncTimeFormatted = computed(() => {
@@ -2075,7 +2070,7 @@
 
           if (duplicatesFound) {
             await loadCatalog();
-            triggerDebouncedSync(1000);
+            await updatePendingCount();
           }
         }
 
@@ -2327,10 +2322,8 @@
           currentWorkout.performedExercises = [];
           currentWorkout.id = generateUUID();
           await loadLogs();
-          showToast('Allenamento svuotato ed eliminato!');
-          if (webhookUrl.value) {
-            syncWithCloud({ silent: false });
-          }
+          await updatePendingCount();
+          showToast('Allenamento svuotato in locale');
         }
 
         function requestClearWorkout() {
@@ -2424,12 +2417,7 @@
           await loadLogs();
           await updatePendingCount();
 
-          if (webhookUrl.value && navigator.onLine) {
-            showToast('✓ Allenamento salvato! Sincronizzazione Cloud in corso...');
-            syncWithCloud({ silent: false });
-          } else {
-            showToast('✓ Allenamento salvato al sicuro in locale sul dispositivo!');
-          }
+          showToast('✓ Allenamento salvato in locale (in attesa di sync)');
         }
 
         function addExerciseToPlanFromSelect(event) {
@@ -2490,11 +2478,9 @@
           });
 
           currentWorkout.performedExercises = [];
+          await updatePendingCount();
 
-          showToast('Scheda svuotata!');
-          if (webhookUrl.value) {
-            syncWithCloud({ silent: false });
-          }
+          showToast('Scheda svuotata in locale');
         }
 
         function requestClearPlan() {
@@ -2534,12 +2520,8 @@
             ]
           }));
 
-          showToast(`✓ Scheda Giorno ${selectedSession.value} salvata nel foglio Schede!`);
-          if (webhookUrl.value) {
-            syncWithCloud({ silent: false });
-          } else {
-            triggerDebouncedSync(500);
-          }
+          await updatePendingCount();
+          showToast(`✓ Scheda Giorno ${selectedSession.value} salvata in locale (in attesa di sync)`);
         }
 
         async function addNewExerciseToCatalog() {
@@ -2660,9 +2642,6 @@
           localStorage.setItem('pl_webhook_url', webhookUrl.value);
           isEditingWebhook.value = false;
           showToast('Webhook Google Apps Script salvato!');
-          if (webhookUrl.value) {
-            syncWithCloud({ silent: false });
-          }
         }
 
         function startEditGeminiKey() {
@@ -2905,8 +2884,8 @@
               _dirty: true
             });
             await loadLogs();
-            showToast('Allenamento eliminato');
-            triggerDebouncedSync(500);
+            await updatePendingCount();
+            showToast('Allenamento eliminato in locale');
           }
         }
 

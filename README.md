@@ -117,8 +117,8 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 ## 3. MANUALE DI SINCRONIZZAZIONE E MULTI-DISPOSITIVO
 
 ### Come funziona la sincronizzazione a 2 vie
-1. Ogni modifica effettuata sul telefono (salvataggio scheda, fine allenamento, cancellazione) aggiorna il database locale e segna l'elemento come `_dirty: true`.
-2. Quando l'app è online, premendo **`SINCRONIZZA ORA`** (o alla chiusura della seduta), l'app invia il delta a Google Apps Script.
+1. Ogni modifica effettuata sul telefono (salvataggio scheda, fine allenamento, cancellazione) aggiorna all'istante il database locale IndexedDB a zero latenza e segna l'elemento come `_dirty: true`, mostrando il badge numerico delle modifiche in sospeso sulla scheda SYNC.
+2. Quando desideri sincronizzare e il dispositivo è online, premendo **`SINCRONIZZA ORA`** nella scheda SYNC (o l'icona nuvola della singola seduta nello Storico), l'app invia il delta a Google Apps Script.
 3. Lo script su Google Sheets esegue il merge con risoluzione automatica dei timestamp (*Last-Write-Wins*) e restituisce lo stato aggiornato all'app.
 
 ---
