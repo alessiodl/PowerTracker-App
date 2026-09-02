@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powertrack-cache-v35';
+const CACHE_NAME = 'powertrack-cache-v36';
 
 const ASSETS_LOCAL = [
   './',
@@ -6,6 +6,7 @@ const ASSETS_LOCAL = [
   'app.html',
   'manuale.html',
   'manifest.json',
+  'palestra.jpg',
   'logo.png',
   'logo.jpg',
   'favicon.ico',

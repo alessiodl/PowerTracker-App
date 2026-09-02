@@ -140,43 +140,51 @@
   <!-- ================= MAIN CONTENT ================= -->
   <main class="flex-1">
 
-    <!-- HERO SECTION -->
-    <section class="relative pt-12 pb-16 lg:pt-20 lg:pb-24 px-4 lg:px-8 max-w-6xl mx-auto">
-      <div class="text-center max-w-3xl mx-auto space-y-6">
-        
-        <!-- Top Badge -->
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-[2px] dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-300 text-[11px] font-mono font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 shadow-sm">
-          <span>OFFLINE-FIRST</span>
-          <span class="text-slate-400">•</span>
-          <span>GOOGLE SHEETS SYNC</span>
-          <span class="text-slate-400">•</span>
-          <span>GEMINI AI</span>
-        </div>
-
-        <!-- Headline -->
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight dark:text-white text-slate-950 leading-[1.15]">
-          Il tracker per l'allenamento con i pesi che hai sempre desiderato
-        </h1>
-
-        <!-- Subheading -->
-        <p class="text-sm sm:text-base dark:text-slate-400 text-slate-600 leading-relaxed max-w-2xl mx-auto">
-          Pianifica le progressioni, registra carichi e serie in tempo reale anche senza connessione internet, importa le tue schede con intelligenza artificiale e sincronizza tutto sul tuo Google Sheet personale.
-        </p>
-
-        <!-- CTA Buttons -->
-        <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a href="app.html" class="w-full sm:w-auto px-6 py-3.5 bg-sky-600 hover:bg-sky-500 text-white font-mono font-bold text-xs uppercase tracking-widest rounded-[2px] shadow-lg transition-all active:scale-[0.98] text-center">
-            Avvia l'Applicazione →
-          </a>
-          <a href="#features" class="w-full sm:w-auto px-6 py-3.5 dark:bg-[#151924] bg-white hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-200 border dark:border-slate-700 border-slate-300 font-mono font-bold text-xs uppercase tracking-widest rounded-[2px] shadow-sm transition-all text-center">
-            Scopri le Funzionalità
-          </a>
-        </div>
-
+    <!-- HERO SECTION WITH PALESTRA.JPG BACKGROUND -->
+    <section class="relative overflow-hidden border-b dark:border-slate-800 border-slate-300">
+      
+      <!-- Background Image with Gradient Overlay -->
+      <div class="absolute inset-0 z-0">
+        <img src="palestra.jpg" alt="Palestra Powerlifting" class="w-full h-full object-cover object-center filter brightness-[0.35] contrast-[1.1]" />
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0c0e14]/75 via-[#0c0e14]/65 to-[#0c0e14] dark:from-[#0c0e14]/85 dark:via-[#0c0e14]/75 dark:to-[#0c0e14]"></div>
       </div>
 
-      <!-- APP PREVIEW MOCKUP -->
-      <div class="mt-12 lg:mt-16 max-w-4xl mx-auto dark:bg-[#151924] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 p-3 sm:p-5 shadow-2xl">
+      <div class="relative z-10 pt-16 pb-16 lg:pt-24 lg:pb-24 px-4 lg:px-8 max-w-6xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto space-y-6">
+          
+          <!-- Top Badge (Block 1) -->
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[2px] bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400 shadow-xl">
+            <span>OFFLINE-FIRST</span>
+            <span class="text-white/40">•</span>
+            <span>GOOGLE SHEETS SYNC</span>
+            <span class="text-white/40">•</span>
+            <span>GEMINI AI</span>
+          </div>
+
+          <!-- Headline (Block 2) -->
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-white leading-[1.15] drop-shadow-md">
+            Il tracker per l'allenamento con i pesi che hai sempre desiderato
+          </h1>
+
+          <!-- Subheading (Block 3) -->
+          <p class="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed max-w-2xl mx-auto font-normal drop-shadow">
+            Pianifica le progressioni, registra carichi e serie in tempo reale anche senza connessione internet, importa le tue schede con intelligenza artificiale e sincronizza tutto sul tuo Google Sheet personale.
+          </p>
+
+          <!-- CTA Buttons -->
+          <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="app.html" class="w-full sm:w-auto px-7 py-4 bg-sky-600 hover:bg-sky-500 text-white font-mono font-bold text-xs uppercase tracking-widest rounded-[2px] shadow-xl hover:shadow-sky-500/25 transition-all active:scale-[0.98] text-center">
+              Avvia l'Applicazione →
+            </a>
+            <a href="#features" class="w-full sm:w-auto px-7 py-4 bg-black/50 hover:bg-black/70 backdrop-blur-md text-white border border-white/25 font-mono font-bold text-xs uppercase tracking-widest rounded-[2px] shadow-lg transition-all text-center">
+              Scopri le Funzionalità
+            </a>
+          </div>
+
+        </div>
+
+        <!-- APP PREVIEW MOCKUP -->
+        <div class="mt-14 lg:mt-18 max-w-4xl mx-auto dark:bg-[#151924]/95 bg-white/95 backdrop-blur-md rounded-[2px] border dark:border-slate-700 border-slate-300 p-3 sm:p-5 shadow-2xl">
         
         <!-- Mockup Window Bar -->
         <div class="flex items-center justify-between pb-3 mb-3 border-b dark:border-slate-800 border-slate-200 text-xs font-mono">
