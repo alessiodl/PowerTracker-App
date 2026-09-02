@@ -10,10 +10,10 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
 2. [Guida all'Uso delle Funzionalità (Le 6 Schede)](#2-guida-alluso-delle-funzionalità-le-6-schede)
    * [Tab 1: SCHEDA (Pianificazione Target)](#tab-1-scheda-pianificazione-target)
    * [Tab 2: ALLENAMENTO (Sessione Live)](#tab-2-allenamento-sessione-live)
-   * [Tab 3: CATALOGO (Esercizi e Categorie)](#tab-3-catalogo-esercizi-e-categorie)
+   * [Tab 3: LIVELLI (Calcolatore Percentuali e Standard di Forza)](#tab-3-livelli-calcolatore-percentuali-e-standard-di-forza)
    * [Tab 4: STORICO (Analisi Sedute e Progressioni)](#tab-4-storico-analisi-sedute-e-progressioni)
-   * [Tab 5: SYNC & CONFIG (Sincronizzazione e Reset)](#tab-5-sync--config-sincronizzazione-e-reset)
-   * [Tab 6: LIVELLI (Standard di Forza e BW)](#tab-6-livelli-standard-di-forza-e-bw)
+   * [Tab 5: CATALOGO (Esercizi e Categorie)](#tab-5-catalogo-esercizi-e-categorie)
+   * [Tab 6: SYNC & CONFIG (Sincronizzazione e Reset)](#tab-6-sync--config-sincronizzazione-e-reset)
 3. [Manuale di Sincronizzazione e Multi-Dispositivo](#3-manuale-di-sincronizzazione-e-multi-dispositivo)
    * [Come funziona la sincronizzazione a 2 vie](#come-funziona-la-sincronizzazione-a-2-vie)
    * [Gestione di più dispositivi (Telefono palestra offline + PC + Telefono principale)](#gestione-di-più-dispositivi)
@@ -69,15 +69,10 @@ La schermata principale utilizzata durante l'allenamento in palestra:
 
 ---
 
-### Tab 3: CATALOGO (Esercizi e Categorie)
-Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
-* **Blocco 1 - Fondamentale**: Squat, Panca, Stacco e varianti primarie.
-* **Blocco 2 - Variante**: Varianti tecniche (Panca fermo 3s, Squat con pausa, Board press, ecc.).
-* **Blocco 3 - Complementari**: Trazioni, Dip, Bicipiti, Tricipiti, Spalle, Core.
-* **Funzionalità**:
-  * **Controllo Anti-duplicati**: Impedisce l'inserimento di doppioni case-insensitive.
-  * **Riordinamento**: Frecce `▲` / `▼` per ordinare gli esercizi per ciascuna categoria.
-  * **Salvataggio**: Il tasto **`SALVA CATALOGO`** in fondo salva le modifiche in locale.
+### Tab 3: LIVELLI (Calcolatore Percentuali e Standard di Forza)
+* **Calcolatore Percentuale 1RM**: Inserisci il tuo massimale (1RM in kg) per calcolare all'istante la tabella dei carichi su 4 colonne compatte dal 60% al 95% con salti del 5%. Blocco collassabile e aperto di default (calcolo volatile in memoria).
+* **Livelli di Performance**: Inserisci il tuo peso corporeo (**BW** in kg) per visualizzare la tabella dei livelli di riferimento (I Livello, II Livello, III Livello) per Squat, Panca, Stacco e movimenti correlati. Blocco collassabile e chiuso di default con salvataggio locale.
+* **100% Locale**: I dati del calcolatore restano memorizzati sul dispositivo senza appesantire lo Sheet.
 
 ---
 
@@ -91,7 +86,19 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 
 ---
 
-### Tab 5: SYNC & CONFIG (Sincronizzazione, Struttura & Reset)
+### Tab 5: CATALOGO (Esercizi e Categorie)
+Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
+* **Blocco 1 - Fondamentale**: Squat, Panca, Stacco e varianti primarie.
+* **Blocco 2 - Variante**: Varianti tecniche (Panca fermo 3s, Squat con pausa, Board press, ecc.).
+* **Blocco 3 - Complementari**: Trazioni, Dip, Bicipiti, Tricipiti, Spalle, Core.
+* **Funzionalità**:
+  * **Controllo Anti-duplicati**: Impedisce l'inserimento di doppioni case-insensitive.
+  * **Riordinamento**: Frecce `▲` / `▼` per ordinare gli esercizi per ciascuna categoria.
+  * **Salvataggio**: Il tasto **`SALVA CATALOGO`** in fondo salva le modifiche in locale.
+
+---
+
+### Tab 6: SYNC & CONFIG (Sincronizzazione, Struttura & Reset)
 * **Stato Sincronizzazione**: Visualizza l'orario dell'ultima sync e il contatore delle modifiche in sospeso (*"X elementi in attesa"*).
 * **Pulsante `SINCRONIZZA ORA`**: Esegue la sincronizzazione manuale a 2 vie istantanea con Google Sheets.
 * **Struttura e Pianificazione (Sottomenu Collassabile)**:
@@ -104,13 +111,6 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 * **Zona di Pericolo - Reset Applicazione**:
   * Box in evidenza rossa con pulsante **`RESET`**.
   * Richiede conferma esplicita e azzera schede, allenamenti e storico in locale.
-
----
-
-### Tab 6: LIVELLI (Calcolatore Percentuali e Standard di Forza)
-* **Calcolatore Percentuale 1RM**: Inserisci il tuo massimale (1RM in kg) per calcolare all'istante la tabella dei carichi dal 60% al 95% con salti del 5%. Blocco collassabile e aperto di default (calcolo volatile in memoria).
-* **Livelli di Performance**: Inserisci il tuo peso corporeo (**BW** in kg) per visualizzare la tabella dei livelli di riferimento (I Livello, II Livello, III Livello) per Squat, Panca, Stacco e movimenti correlati. Blocco collassabile e chiuso di default con salvataggio locale.
-* **100% Locale**: I dati del calcolatore restano memorizzati sul dispositivo senza appesantire lo Sheet.
 
 ---
 

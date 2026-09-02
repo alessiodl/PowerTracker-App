@@ -1370,14 +1370,14 @@
           <span class="text-[8px] sm:text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENAMENTO</span>
         </button>
 
-        <!-- Tab 3: CATALOGO -->
+        <!-- Tab 3: LIVELLI -->
         <button 
-          @click="activeTab = 'catalog'" 
+          @click="activeTab = 'levels'" 
           class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'catalog' ? 'text-purple-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
-          <img :src="getIcon('catalogo')" class="w-5 h-5 object-contain" alt="Catalogo" />
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
+          <img :src="getIcon('livelli')" class="w-5 h-5 object-contain" alt="Livelli" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
         </button>
 
         <!-- Tab 4: STORICO -->
@@ -1390,7 +1390,17 @@
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">STORICO</span>
         </button>
 
-        <!-- Tab 5: SYNC & CONFIG -->
+        <!-- Tab 5: CATALOGO -->
+        <button 
+          @click="activeTab = 'catalog'" 
+          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
+          :class="activeTab === 'catalog' ? 'text-purple-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+        >
+          <img :src="getIcon('catalogo')" class="w-5 h-5 object-contain" alt="Catalogo" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
+        </button>
+
+        <!-- Tab 6: SYNC & CONFIG -->
         <button 
           @click="activeTab = 'sync'" 
           class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
@@ -1398,16 +1408,6 @@
         >
           <img :src="getIcon('sync')" class="w-5 h-5 object-contain" alt="Sync" />
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
-        </button>
-
-        <!-- Tab 6: LIVELLI -->
-        <button 
-          @click="activeTab = 'levels'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'levels' ? 'text-cyan-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
-        >
-          <img :src="getIcon('livelli')" class="w-5 h-5 object-contain" alt="Livelli" />
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
         </button>
 
       </div>
