@@ -1057,77 +1057,163 @@
 
       </section>
 
-      <!-- ================= TAB 6: LIVELLI DI PERFORMANCE ================= -->
+      <!-- ================= TAB 6: LIVELLI & PERCENTUALI ================= -->
       <section v-if="activeTab === 'levels'" class="space-y-4">
         
-        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
-          <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-1">Livelli di Performance</h2>
-          <p class="text-xs dark:text-slate-400 text-slate-500 mb-3">Riferimento dei fondamentali del powerlifting. I carichi sono espressi in multipli del peso corporeo (BW) o in ripetizioni.</p>
-
-          <div class="flex items-end gap-2 mb-3">
-            <div class="flex-1">
-              <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Peso corporeo (kg)</label>
-              <input 
-                type="number" 
-                min="0" 
-                step="0.5" 
-                v-model="userBodyWeight" 
-                placeholder="es. 80" 
-                class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-cyan-500"
-              />
+        <!-- 1. CALCOLATORE PERCENTUALE (Aperto di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isPercentCalcExpanded = !isPercentCalcExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Calcolatore Percentuale</span>
+              <span v-if="activeOneRepMax" class="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-[2px]">
+                1RM: {{ activeOneRepMax }} kg
+              </span>
             </div>
-            <button 
-              @click="calculateLevels" 
-              class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
-            >
-              Calcola
-            </button>
-            <button 
-              @click="resetLevels" 
-              class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
-            >
-              Reset
-            </button>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isPercentCalcExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
+
+          <!-- Contenuto Accordion Calcolatore Percentuale -->
+          <div v-show="isPercentCalcExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 space-y-3">
+            <p class="text-xs dark:text-slate-400 text-slate-500">Calcola rapidamente le percentuali di carico (dal 60% al 95%) in base al tuo massimale (1RM).</p>
+
+            <div class="flex items-end gap-2 mb-3">
+              <div class="flex-1">
+                <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Massimale di riferimento (kg)</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.5" 
+                  v-model="userOneRepMax" 
+                  @keyup.enter="calculatePercentages"
+                  placeholder="es. 140" 
+                  class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+              <button 
+                @click="calculatePercentages" 
+                class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+              >
+                Calcola
+              </button>
+              <button 
+                @click="resetPercentages" 
+                class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+              >
+                Reset
+              </button>
+            </div>
+
+            <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
+                  <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                    <th class="px-3 py-2">% Carico</th>
+                    <th class="px-3 py-2">Kg</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+                  <tr v-for="row in percentageTable" :key="row.percentage" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
+                    <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.percentage }}</td>
+                    <td class="px-3 py-2.5 font-bold whitespace-nowrap" :class="row.kg !== '-' ? 'text-sky-600 dark:text-sky-400' : 'dark:text-slate-500 text-slate-400'">{{ row.kg }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
+        </div>
 
-          <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
-            <table class="w-full text-left text-xs font-mono">
-              <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
-                <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
-                  <th class="px-3 py-2">Esercizio</th>
-                  <th class="px-3 py-2">I livello</th>
-                  <th class="px-3 py-2">II livello</th>
-                  <th class="px-3 py-2">III livello</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
-                <tr v-for="(row, rIdx) in levelTable" :key="row.name" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
-                  <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.name }}</td>
-                  <td class="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">{{ row.l1 }}</td>
-                  <td class="px-3 py-2.5 text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">{{ row.l2 }}</td>
-                  <td class="px-3 py-2.5 text-rose-600 dark:text-rose-400 font-bold whitespace-nowrap">{{ row.l3 }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <!-- 2. LIVELLI DI PERFORMANCE (Chiuso di default) -->
+        <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-sm overflow-hidden">
+          <button 
+            @click="isLevelsExpanded = !isLevelsExpanded"
+            class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Livelli di Performance</span>
+              <span v-if="activeBodyWeight" class="text-[10px] font-mono font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-[2px]">
+                BW: {{ activeBodyWeight }} kg
+              </span>
+            </div>
+            <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isLevelsExpanded ? 'rotate-180' : ''">
+              ▼
+            </span>
+          </button>
 
-          <div class="mt-3 space-y-1.5">
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-emerald-300 text-emerald-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-emerald-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">I livello</span> &mdash; Il traguardo a cui chiunque si allena dovrebbe mirare.</span>
-            </div>
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-amber-300 text-amber-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-amber-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">II livello</span> &mdash; Raggiungibile da persone con genetica nella media dopo anni di allenamento costante.</span>
-            </div>
-            <div class="flex items-start gap-2 text-[11px] font-mono dark:text-rose-300 text-rose-700">
-              <span class="w-1.5 h-1.5 rounded-[1px] bg-rose-500 mt-1 shrink-0"></span>
-              <span><span class="font-bold">III livello</span> &mdash; Richiede una specializzazione avanzata.</span>
-            </div>
-          </div>
+          <!-- Contenuto Accordion Livelli di Performance -->
+          <div v-show="isLevelsExpanded" class="p-3.5 pt-1 border-t dark:border-slate-800 border-slate-200 space-y-3">
+            <p class="text-xs dark:text-slate-400 text-slate-500">Riferimento dei fondamentali del powerlifting. I carichi sono espressi in multipli del peso corporeo (BW) o in ripetizioni.</p>
 
-          <div class="mt-3 pt-2.5 border-t dark:border-slate-800 border-slate-200 text-[10px] font-mono dark:text-slate-500 text-slate-400">
-            Fonte: Project Invictus
+            <div class="flex items-end gap-2 mb-3">
+              <div class="flex-1">
+                <label class="block text-[10px] font-mono dark:text-slate-400 text-slate-500 uppercase mb-0.5 font-bold">Peso corporeo (kg)</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  step="0.5" 
+                  v-model="userBodyWeight" 
+                  @keyup.enter="calculateLevels"
+                  placeholder="es. 80" 
+                  class="w-full dark:bg-slate-950 bg-slate-50 dark:text-slate-100 text-slate-900 font-mono text-xs p-2 rounded-[2px] border dark:border-slate-700 border-slate-300 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <button 
+                @click="calculateLevels" 
+                class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+              >
+                Calcola
+              </button>
+              <button 
+                @click="resetLevels" 
+                class="px-3 py-2 dark:bg-slate-800 bg-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.98]"
+              >
+                Reset
+              </button>
+            </div>
+
+            <div class="overflow-auto border dark:border-slate-800 border-slate-200 rounded-[2px]">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="sticky top-0 dark:bg-slate-900 bg-slate-100">
+                  <tr class="dark:text-slate-400 text-slate-500 text-[10px] uppercase border-b dark:border-slate-800 border-slate-200">
+                    <th class="px-3 py-2">Esercizio</th>
+                    <th class="px-3 py-2">I livello</th>
+                    <th class="px-3 py-2">II livello</th>
+                    <th class="px-3 py-2">III livello</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y dark:divide-slate-800 divide-slate-200">
+                  <tr v-for="(row, rIdx) in levelTable" :key="row.name" :class="row.alt ? 'dark:bg-slate-950/40 bg-slate-50/40' : ''">
+                    <td class="px-3 py-2.5 font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">{{ row.name }}</td>
+                    <td class="px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">{{ row.l1 }}</td>
+                    <td class="px-3 py-2.5 text-amber-600 dark:text-amber-400 font-bold whitespace-nowrap">{{ row.l2 }}</td>
+                    <td class="px-3 py-2.5 text-rose-600 dark:text-rose-400 font-bold whitespace-nowrap">{{ row.l3 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-start gap-2 text-[11px] font-mono dark:text-emerald-300 text-emerald-700">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-emerald-500 mt-1 shrink-0"></span>
+                <span><span class="font-bold">I livello</span> &mdash; Il traguardo a cui chiunque si allena dovrebbe mirare.</span>
+              </div>
+              <div class="flex items-start gap-2 text-[11px] font-mono dark:text-amber-300 text-amber-700">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-amber-500 mt-1 shrink-0"></span>
+                <span><span class="font-bold">II livello</span> &mdash; Raggiungibile da persone con genetica nella media dopo anni di allenamento costante.</span>
+              </div>
+              <div class="flex items-start gap-2 text-[11px] font-mono dark:text-rose-300 text-rose-700">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-rose-500 mt-1 shrink-0"></span>
+                <span><span class="font-bold">III livello</span> &mdash; Richiede una specializzazione avanzata.</span>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t dark:border-slate-800 border-slate-200 text-[10px] font-mono dark:text-slate-500 text-slate-400">
+              Fonte: Project Invictus
+            </div>
           </div>
         </div>
 
@@ -1578,7 +1664,44 @@
           }
         }
 
-        // Livelli di Performance - Calcolatore BW
+        // Tab LIVELLI: Stato Accordion
+        const isPercentCalcExpanded = ref(true);
+        const isLevelsExpanded = ref(false);
+
+        // Tab LIVELLI: Calcolatore Percentuale Massimale (1RM)
+        const userOneRepMax = ref('');
+        const activeOneRepMax = ref(null);
+        const percentageSteps = [60, 65, 70, 75, 80, 85, 90, 95];
+
+        const percentageTable = computed(() => {
+          const max = activeOneRepMax.value;
+          return percentageSteps.map((pct, idx) => {
+            return {
+              percentage: `${pct}%`,
+              kg: max && max > 0 ? formatKg(max * (pct / 100)) : '-',
+              alt: idx % 2 === 0
+            };
+          });
+        });
+
+        function calculatePercentages() {
+          const n = parseFloat(String(userOneRepMax.value).replace(',', '.'));
+          if (!n || n <= 0) {
+            activeOneRepMax.value = null;
+            showToast('Inserisci un massimale valido.');
+            return;
+          }
+          activeOneRepMax.value = n;
+          showToast(`Percentuali calcolate su ${n} kg!`);
+        }
+
+        function resetPercentages() {
+          userOneRepMax.value = '';
+          activeOneRepMax.value = null;
+          showToast('Calcolatore percentuali azzerato.');
+        }
+
+        // Tab LIVELLI: Livelli di Performance - Calcolatore BW
         const userBodyWeight = ref(localStorage.getItem('pl_body_weight') || '');
         const activeBodyWeight = ref(userBodyWeight.value ? parseFloat(userBodyWeight.value) : null);
         const levelRows = [
@@ -3137,7 +3260,15 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           syncStatusTextClass,
           syncStatusBadgeClass,
           triggerManualSync,
+          isPercentCalcExpanded,
+          isLevelsExpanded,
+          userOneRepMax,
+          activeOneRepMax,
+          percentageTable,
+          calculatePercentages,
+          resetPercentages,
           userBodyWeight,
+          activeBodyWeight,
           levelTable,
           calculateLevels,
           resetLevels,

@@ -107,8 +107,9 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 
 ---
 
-### Tab 6: LIVELLI (Standard di Forza e BW)
-* **Calcolatore Locale Powerlifting**: Inserisci il tuo peso corporeo (**BW** in kg) per visualizzare la tabella dei livelli di riferimento (I Livello, II Livello, III Livello) per Squat, Panca, Stacco e movimenti correlati.
+### Tab 6: LIVELLI (Calcolatore Percentuali e Standard di Forza)
+* **Calcolatore Percentuale 1RM**: Inserisci il tuo massimale (1RM in kg) per calcolare all'istante la tabella dei carichi dal 60% al 95% con salti del 5%. Blocco collassabile e aperto di default (calcolo volatile in memoria).
+* **Livelli di Performance**: Inserisci il tuo peso corporeo (**BW** in kg) per visualizzare la tabella dei livelli di riferimento (I Livello, II Livello, III Livello) per Squat, Panca, Stacco e movimenti correlati. Blocco collassabile e chiuso di default con salvataggio locale.
 * **100% Locale**: I dati del calcolatore restano memorizzati sul dispositivo senza appesantire lo Sheet.
 
 ---
