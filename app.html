@@ -758,12 +758,12 @@
             class="w-full px-3.5 py-3 flex items-center justify-between text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
           >
             <div class="flex items-center gap-2">
-              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Struttura e Pianificazione</span>
+              <span class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Pianificazione</span>
               <span v-if="isPlanningConfigPendingSync" class="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-[2px] animate-pulse">
                 Da sincronizzare
               </span>
-              <span v-else class="text-[10px] font-mono text-slate-400 bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-[2px]">
-                {{ configNumSessions }} Giorni • {{ configNumWeeks }} Settimane • {{ configNumPrograms }} Prog
+              <span v-else class="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-200/80 dark:bg-slate-800 px-1.5 py-0.5 rounded-[2px]">
+                {{ configNumSessions }}G • {{ configNumWeeks }}W • {{ configNumPrograms }}P
               </span>
             </div>
             <span class="text-xs font-mono text-slate-400 transform transition-transform" :class="isPlanningExpanded ? 'rotate-180' : ''">
@@ -805,7 +805,12 @@
                 <option :value="12">12 Settimane (3 mesi)</option>
                 <option :value="14">14 Settimane (Default)</option>
                 <option :value="16">16 Settimane (4 mesi)</option>
+                <option :value="18">18 Settimane</option>
                 <option :value="20">20 Settimane (5 mesi)</option>
+                <option :value="22">22 Settimane</option>
+                <option :value="24">24 Settimane (6 mesi)</option>
+                <option :value="26">26 Settimane</option>
+                <option :value="28">28 Settimane (7 mesi)</option>
               </select>
             </div>
 
