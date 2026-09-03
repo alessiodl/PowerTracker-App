@@ -360,24 +360,6 @@
           </select>
         </div>
 
-        <!-- Sticky Bottom Action Bar: Salva Scheda + Svuota -->
-        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
-          <button 
-            @click="savePlan" 
-            class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
-          >
-            <span>Salva Scheda</span>
-          </button>
-          <button 
-            v-if="currentPlan.exercises.length > 0"
-            @click="requestClearPlan" 
-            class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
-            title="Svuota tutti gli esercizi della scheda"
-          >
-            <span>Svuota</span>
-          </button>
-        </div>
-
       </section>
 
       <!-- ================= TAB 2: ALLENAMENTO (LIVE WORKOUT) ================= -->
@@ -594,24 +576,6 @@
           </div>
         </div>
 
-        <!-- Sticky Bottom Action Bar: Concludi Allenamento + Svuota -->
-        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
-          <button 
-            @click="saveWorkoutSession" 
-            class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
-          >
-            <span>Concludi Allenamento</span>
-          </button>
-          <button 
-            v-if="currentWorkout.performedExercises.length > 0"
-            @click="requestClearWorkout" 
-            class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
-            title="Svuota tutti gli esercizi dall'allenamento"
-          >
-            <span>Svuota</span>
-          </button>
-        </div>
-
       </section>
 
       <!-- ================= TAB 3: CATALOGO ESERCIZI ================= -->
@@ -671,16 +635,6 @@
               </button>
             </div>
           </div>
-        </div>
-
-        <!-- Sticky Bottom Action Bar: Salva Catalogo -->
-        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
-          <button 
-            @click="saveCatalog" 
-            class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
-          >
-            <span>Salva Catalogo</span>
-          </button>
         </div>
 
       </section>
@@ -772,16 +726,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Sticky Bottom Action Bar: Esporta Diario CSV -->
-        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
-          <button 
-            @click="exportDiaryToCSV" 
-            class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
-          >
-            <span>Esporta Diario in CSV</span>
-          </button>
         </div>
 
       </section>
@@ -1429,6 +1373,68 @@
           <p class="text-[11px] dark:text-slate-400 text-slate-500 font-mono">Estrazione scheda con Gemini</p>
         </div>
       </div>
+    </div>
+
+    <!-- UNIFIED STICKY ACTION BAR (ABOVE BOTTOM NAV) -->
+    <div 
+      v-if="['plan', 'workout', 'catalog', 'history'].includes(activeTab)"
+      class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2"
+    >
+      <!-- TAB 1: SCHEDA -->
+      <template v-if="activeTab === 'plan'">
+        <button 
+          @click="savePlan" 
+          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+        >
+          <span>Salva Scheda</span>
+        </button>
+        <button 
+          v-if="currentPlan.exercises.length > 0"
+          @click="requestClearPlan" 
+          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
+          title="Svuota tutti gli esercizi della scheda"
+        >
+          <span>Svuota</span>
+        </button>
+      </template>
+
+      <!-- TAB 2: ALLENAMENTO -->
+      <template v-else-if="activeTab === 'workout'">
+        <button 
+          @click="saveWorkoutSession" 
+          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+        >
+          <span>Concludi Allenamento</span>
+        </button>
+        <button 
+          v-if="currentWorkout.performedExercises.length > 0"
+          @click="requestClearWorkout" 
+          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
+          title="Svuota tutti gli esercizi dall'allenamento"
+        >
+          <span>Svuota</span>
+        </button>
+      </template>
+
+      <!-- TAB 3: CATALOGO -->
+      <template v-else-if="activeTab === 'catalog'">
+        <button 
+          @click="saveCatalog" 
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+        >
+          <span>Salva Catalogo</span>
+        </button>
+      </template>
+
+      <!-- TAB 4: DIARIO -->
+      <template v-else-if="activeTab === 'history'">
+        <button 
+          @click="exportDiaryToCSV" 
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+        >
+          <span>Esporta Diario in CSV</span>
+        </button>
+      </template>
     </div>
 
     <!-- BOTTOM NAVIGATION BAR -->
