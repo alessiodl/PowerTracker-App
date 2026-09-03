@@ -721,7 +721,7 @@
       </section>
 
       <!-- ================= TAB 5: SYNC & CONFIG ================= -->
-      <section v-if="activeTab === 'sync'" class="space-y-4">
+      <section v-if="activeTab === 'sync'" class="space-y-4 pb-20">
         
         <!-- 1. Scheda Stato e Sincronizzazione Cloud -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-3">
@@ -744,19 +744,6 @@
               </span>
             </div>
           </div>
-
-          <button 
-            @click="triggerManualSync" 
-            :disabled="isSyncingCloud || !webhookUrl"
-            class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2"
-          >
-            <div v-if="isSyncingCloud" class="flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.32s;"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.16s;"></span>
-              <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce"></span>
-            </div>
-            <span>{{ isSyncingCloud ? 'Sincronizzazione in corso...' : 'Sincronizza Ora' }}</span>
-          </button>
 
           <p class="text-[11px] dark:text-slate-400 text-slate-500 leading-relaxed flex items-start gap-1.5">
             <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
@@ -1367,7 +1354,7 @@
 
     <!-- UNIFIED STICKY ACTION BAR (ABOVE BOTTOM NAV) -->
     <div 
-      v-if="['plan', 'workout', 'catalog', 'history'].includes(activeTab)"
+      v-if="['plan', 'workout', 'catalog', 'history', 'sync'].includes(activeTab)"
       class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2"
     >
       <!-- TAB 1: SCHEDA -->
@@ -1423,6 +1410,22 @@
           class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
         >
           <span>Esporta Diario in CSV</span>
+        </button>
+      </template>
+
+      <!-- TAB 5: SYNC & CONFIG -->
+      <template v-else-if="activeTab === 'sync'">
+        <button 
+          @click="triggerManualSync" 
+          :disabled="isSyncingCloud || !webhookUrl"
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer leading-none"
+        >
+          <div v-if="isSyncingCloud" class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.32s;"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.16s;"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce"></span>
+          </div>
+          <span>{{ isSyncingCloud ? 'Sincronizzazione in corso...' : 'Sincronizza Ora' }}</span>
         </button>
       </template>
     </div>
