@@ -1359,6 +1359,22 @@
       </div>
     </div>
 
+    <!-- AI ERROR DIALOG MODAL -->
+    <div v-if="aiErrorDialog" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-sm w-full p-4 shadow-2xl flex flex-col">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900 flex items-center gap-2">
+            <span>⏳</span> {{ aiErrorDialog.title }}
+          </h3>
+          <button @click="aiErrorDialog = null" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+        <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed">{{ aiErrorDialog.message }}</p>
+        <div class="mt-4 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end">
+          <button @click="aiErrorDialog = null" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-bold rounded-[2px] shadow-sm transition-all active:scale-[0.98]">Ho capito</button>
+        </div>
+      </div>
+    </div>
+
     <!-- FULLSCREEN SYNCING BLOCKER MODAL -->
     <div v-if="isSyncingCloud" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
       <div class="dark:bg-[#1c202c] bg-white p-5 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-3 max-w-xs w-full">
@@ -1882,6 +1898,9 @@
 
         // Dialog Conferma Eliminazione
         const confirmDialog = ref(null);
+
+        // Dialog Avviso Errore IA
+        const aiErrorDialog = ref(null);
 
         function askConfirm(title, message, action) {
           confirmDialog.value = { title, message, action };
@@ -3038,8 +3057,11 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
 
             const apiKey = (localStorage.getItem('pl_gemini_key') || '').trim();
             if (!apiKey) {
-              showToast('Configura prima l\'API Key di Gemini nel tab Sync & Storico.');
-              throw new Error('Manca API key');
+              aiErrorDialog.value = {
+                title: 'API Key Mancante',
+                message: 'Configura prima la tua Gemini API Key gratuita nella sezione "Configurazione e Chiavi" della tab SYNC.'
+              };
+              return;
             }
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
@@ -3067,7 +3089,32 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
             });
 
             if (!res.ok) {
-              throw new Error('Errore nella chiamata all\'IA.');
+              let errorData = null;
+              try {
+                errorData = await res.json();
+              } catch (e) {}
+
+              const errCode = errorData?.error?.code || res.status;
+              const errStatus = errorData?.error?.status || '';
+              const errMsg = errorData?.error?.message || '';
+
+              if (errCode === 503 || errStatus === 'UNAVAILABLE' || errMsg.toLowerCase().includes('high demand') || errMsg.toLowerCase().includes('overloaded') || errMsg.toLowerCase().includes('resource exhausted')) {
+                aiErrorDialog.value = {
+                  title: 'Server IA Momentaneamente Occupato',
+                  message: 'Il modello IA è momentaneamente sovraccarico per l\'alto traffico. Riprova tra qualche istante o inserisci la scheda manualmente.'
+                };
+              } else if (errCode === 400 || errCode === 403 || errMsg.toLowerCase().includes('api key') || errMsg.toLowerCase().includes('unregistered') || errMsg.toLowerCase().includes('permission')) {
+                aiErrorDialog.value = {
+                  title: 'API Key Non Valida',
+                  message: 'L\'API Key di Google Gemini non è valida o è priva dei permessi necessari. Verificala nella tab SYNC.'
+                };
+              } else {
+                aiErrorDialog.value = {
+                  title: 'Server IA Momentaneamente Occupato',
+                  message: 'Il modello IA è momentaneamente sovraccarico per l\'alto traffico. Riprova tra qualche istante o inserisci la scheda manualmente.'
+                };
+              }
+              return;
             }
 
             const data = await res.json();
@@ -3112,7 +3159,12 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
             }
           } catch (err) {
             console.error('Errore importazione immagine:', err);
-            showToast('Impossibile importare la scheda dall\'immagine.');
+            if (!aiErrorDialog.value) {
+              aiErrorDialog.value = {
+                title: 'Server IA Momentaneamente Occupato',
+                message: 'Il modello IA è momentaneamente sovraccarico per l\'alto traffico. Riprova tra qualche istante o inserisci la scheda manualmente.'
+              };
+            }
           } finally {
             isImportingImage.value = false;
           }
@@ -3365,6 +3417,7 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           deleteLog,
           requestDeleteLog,
           confirmDialog,
+          aiErrorDialog,
           askConfirm,
           cancelConfirm,
           runConfirm,
