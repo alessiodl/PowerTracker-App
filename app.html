@@ -160,21 +160,34 @@
         </select>
       </div>
 
-      <!-- Row 3: Dual Progress Bars (Blocco / Programma e Microciclo / Settimana) -->
-      <div class="flex flex-col gap-1 w-full px-0.5" :title="`Progresso Blocco: ${programProgress.completed}/${programProgress.total} sedute (${programProgress.percent}%) • Settimana: ${weekProgress.completed}/${weekProgress.total} sedute (${weekProgress.percent}%)`">
-        <!-- Barra 1: Blocco (Programma) -->
-        <div class="w-full bg-slate-300/80 dark:bg-slate-700/70 h-[3px] rounded-[1px] overflow-hidden" title="Progresso Blocco">
-          <div 
-            class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
-            :style="{ width: `${programProgress.percent}%` }"
-          ></div>
+      <!-- Row 3: Dual Progress Bars Inline (Programma & Settimana) -->
+      <div class="flex flex-col gap-1 w-full px-0.5 pt-0.5 text-[9.5px] font-mono font-semibold">
+        <!-- Barra 1: Programma -->
+        <div class="flex items-center gap-1.5" :title="`Progresso Programma: ${programProgress.completed}/${programProgress.total} sedute (${programProgress.percent}%)`">
+          <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Programma</span>
+          <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[3.5px] rounded-[1px] overflow-hidden">
+            <div 
+              class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+              :style="{ width: `${programProgress.percent}%` }"
+            ></div>
+          </div>
+          <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
+            {{ programProgress.completed }}/{{ programProgress.total }} ({{ programProgress.percent }}%)
+          </span>
         </div>
-        <!-- Barra 2: Microciclo (Settimana) -->
-        <div class="w-full bg-slate-300/80 dark:bg-slate-700/70 h-[3px] rounded-[1px] overflow-hidden" title="Progresso Settimana">
-          <div 
-            class="bg-emerald-400 dark:bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
-            :style="{ width: `${weekProgress.percent}%` }"
-          ></div>
+
+        <!-- Barra 2: Settimana -->
+        <div class="flex items-center gap-1.5" :title="`Progresso Settimana: ${weekProgress.completed}/${weekProgress.total} sedute (${weekProgress.percent}%)`">
+          <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Settimana</span>
+          <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[3.5px] rounded-[1px] overflow-hidden">
+            <div 
+              class="bg-emerald-400 dark:bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+              :style="{ width: `${weekProgress.percent}%` }"
+            ></div>
+          </div>
+          <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
+            {{ weekProgress.completed }}/{{ weekProgress.total }} ({{ weekProgress.percent }}%)
+          </span>
         </div>
       </div>
     </header>
