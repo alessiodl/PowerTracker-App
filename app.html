@@ -159,6 +159,24 @@
           <option v-for="s in availableSessions" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
         </select>
       </div>
+
+      <!-- Row 3: Dual Progress Bars (Blocco / Programma e Microciclo / Settimana) -->
+      <div class="flex flex-col gap-1 w-full px-0.5" :title="`Progresso Blocco: ${programProgress.completed}/${programProgress.total} sedute (${programProgress.percent}%) • Settimana: ${weekProgress.completed}/${weekProgress.total} sedute (${weekProgress.percent}%)`">
+        <!-- Barra 1: Blocco (Programma) -->
+        <div class="w-full bg-slate-300/80 dark:bg-slate-700/70 h-[3px] rounded-[1px] overflow-hidden" title="Progresso Blocco">
+          <div 
+            class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+            :style="{ width: `${programProgress.percent}%` }"
+          ></div>
+        </div>
+        <!-- Barra 2: Microciclo (Settimana) -->
+        <div class="w-full bg-slate-300/80 dark:bg-slate-700/70 h-[3px] rounded-[1px] overflow-hidden" title="Progresso Settimana">
+          <div 
+            class="bg-emerald-400 dark:bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+            :style="{ width: `${weekProgress.percent}%` }"
+          ></div>
+        </div>
+      </div>
     </header>
 
     <!-- SESSION BANNER TITLE CON PALESTRA_MOBILE.JPG -->
@@ -1675,6 +1693,64 @@
           if (!webhookUrl.value) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
           if (pendingChangesCount.value > 0) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
           return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        });
+
+        // Progressione Temporale: Blocco (Programma) e Microciclo (Settimana)
+        const programProgress = computed(() => {
+          const totalWeeks = Number(configNumWeeks.value) || 14;
+          const totalSessions = Number(configNumSessions.value) || 4;
+          const total = totalWeeks * totalSessions;
+          if (total <= 0) return { completed: 0, total: 1, percent: 0 };
+
+          const prog = Number(selectedProgram.value);
+          const completedSlots = new Set();
+
+          for (const log of workoutLogs.value) {
+            if (log.isDeleted || Number(log.program) !== prog) continue;
+            const hasData = (log.performedExercises || []).some(ex => 
+              (ex.sets || []).some(s => 
+                (s.weight !== null && s.weight !== '' && Number(s.weight) > 0) || 
+                (s.reps !== null && s.reps !== '' && Number(s.reps) > 0) || 
+                (s.rpe && String(s.rpe).trim()) || 
+                (s.notes && String(s.notes).trim())
+              )
+            );
+            if (hasData) {
+              completedSlots.add(`${log.week}_${log.session}`);
+            }
+          }
+
+          const completed = completedSlots.size;
+          const percent = Math.min(100, Math.round((completed / total) * 100));
+          return { completed, total, percent };
+        });
+
+        const weekProgress = computed(() => {
+          const total = Number(configNumSessions.value) || 4;
+          if (total <= 0) return { completed: 0, total: 1, percent: 0 };
+
+          const prog = Number(selectedProgram.value);
+          const wk = Number(selectedWeek.value);
+          const completedSessions = new Set();
+
+          for (const log of workoutLogs.value) {
+            if (log.isDeleted || Number(log.program) !== prog || Number(log.week) !== wk) continue;
+            const hasData = (log.performedExercises || []).some(ex => 
+              (ex.sets || []).some(s => 
+                (s.weight !== null && s.weight !== '' && Number(s.weight) > 0) || 
+                (s.reps !== null && s.reps !== '' && Number(s.reps) > 0) || 
+                (s.rpe && String(s.rpe).trim()) || 
+                (s.notes && String(s.notes).trim())
+              )
+            );
+            if (hasData) {
+              completedSessions.add(String(log.session));
+            }
+          }
+
+          const completed = completedSessions.size;
+          const percent = Math.min(100, Math.round((completed / total) * 100));
+          return { completed, total, percent };
         });
 
         // Conteggio modifiche locali non sincronizzate
@@ -3314,7 +3390,9 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           getProgramLabel,
           getProgramBannerLabel,
           onPlanningConfigChange,
-          updateProgramLabel
+          updateProgramLabel,
+          programProgress,
+          weekProgress
         };
       }
     }).mount('#app');
