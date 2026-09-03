@@ -124,99 +124,94 @@
 
   <div id="app" class="flex-1 flex flex-col max-w-2xl w-full mx-auto pb-24 border-x dark:border-slate-800/80 border-slate-300 dark:bg-[#11131a] bg-[#eef2f6] transition-colors">
     
-    <header class="sticky top-0 z-30 dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-md border-b dark:border-slate-800 border-slate-300 px-3.5 py-2 flex flex-col gap-2 shadow-sm">
+    <header class="sticky top-0 z-30 dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-md border-b dark:border-slate-800 border-slate-300 shadow-sm transition-colors">
+      
+      <!-- Row 1: Banner Immagine con Logo a sinistra, Titolo al centro e Theme Toggle a destra -->
+      <div class="relative overflow-hidden py-1.5 px-3 border-b dark:border-slate-800/80 border-slate-300/80 shadow-inner flex items-center justify-between">
+        
+        <!-- Immagine di Sfondo con Maschera Leggera -->
+        <div class="absolute inset-0 z-0">
+          <img src="palestra_mobile.jpg" alt="" class="w-full h-full object-cover object-center contrast-[1.05]" />
+          <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/75"></div>
+        </div>
 
-      <!-- Row 1: Logo + Theme Toggle -->
-      <div class="flex items-center justify-between">
-        <a href="index.html" class="flex items-center space-x-2.5 hover:opacity-80 transition-opacity" title="Torna alla Home">
-          <img src="logo.png" alt="Logo" class="w-8 h-8 rounded-[22%] object-contain shadow-sm" />
-          <div>
-            <h1 class="font-extrabold text-xs uppercase tracking-widest leading-none dark:text-slate-100 text-slate-900">PowerTrack</h1>
-            <div class="flex items-center gap-1.5 mt-0.5">
-              <span class="w-1.5 h-1.5 rounded-[1px]" :class="syncStatusDotClass"></span>
-              <span class="text-[9px] font-mono tracking-wider uppercase font-semibold" :class="syncStatusTextClass">
-                {{ syncStatusLabel }}
-              </span>
-            </div>
-          </div>
+        <!-- Sinistra: Logo Home -->
+        <a href="index.html" class="relative z-10 flex items-center shrink-0 hover:opacity-85 transition-opacity" title="Torna alla Home">
+          <img src="logo.png" alt="Logo" class="w-7 h-7 rounded-[22%] object-contain shadow-md ring-1 ring-white/20" />
         </a>
 
-        <!-- Theme Toggle Button -->
-        <button @click="toggleTheme" class="p-1.5 dark:bg-[#1c202c] bg-white border dark:border-slate-700/80 border-slate-300 rounded-[2px] hover:opacity-80 transition-all shadow-sm flex items-center justify-center" title="Cambia Tema">
-          <img :src="isDarkMode ? 'icons/white_for_dark_theme/sun.png' : 'icons/black_for_light_theme/moon.png'" alt="Tema" class="w-4 h-4 object-contain" />
+        <!-- Centro: Testo Seduta e Programma -->
+        <div class="relative z-10 flex flex-col items-center justify-center text-center px-2 min-w-0">
+          <div class="flex items-center justify-center gap-1.5 flex-wrap">
+            <h2 class="text-xs sm:text-sm font-black uppercase tracking-wider font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] leading-tight">
+              SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
+            </h2>
+            <span v-if="isPlanningConfigPendingSync" class="text-[8px] font-mono font-bold uppercase px-1 py-0.2 rounded-[2px] bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-sm shrink-0" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
+              Non sync
+            </span>
+          </div>
+          <p class="text-[9.5px] sm:text-[10px] text-sky-300 font-mono font-bold tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] truncate max-w-[200px] sm:max-w-xs">
+            {{ getProgramBannerLabel(selectedProgram) }}
+          </p>
+        </div>
+
+        <!-- Destra: Theme Toggle -->
+        <button 
+          @click="toggleTheme" 
+          class="relative z-10 p-1.5 bg-black/40 hover:bg-black/60 border border-white/20 rounded-[2px] backdrop-blur-sm hover:opacity-90 transition-all shadow-sm flex items-center justify-center shrink-0" 
+          title="Cambia Tema"
+        >
+          <img :src="isDarkMode ? 'icons/white_for_dark_theme/sun.png' : 'icons/white_for_dark_theme/moon.png'" alt="Tema" class="w-3.5 h-3.5 object-contain" />
         </button>
       </div>
 
-      <!-- Row 2: Session Selector (full width) -->
-      <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs shadow-sm">
-        <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option v-for="p in availablePrograms" :key="p" :value="p" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ getProgramLabel(p) }}</option>
-        </select>
-        <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option v-for="w in availableWeeks" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
-        </select>
-        <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
-          <option v-for="s in availableSessions" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
-        </select>
-      </div>
-
-      <!-- Row 3: Dual Progress Bars Inline (Programma & Settimana) -->
-      <div class="flex flex-col gap-1 w-full px-0.5 pt-0.5 text-[9.5px] font-mono font-semibold">
-        <!-- Barra 1: Programma -->
-        <div class="flex items-center gap-1.5" :title="`Progresso Programma: ${programProgress.completed}/${programProgress.total} sedute (${programProgress.percent}%)`">
-          <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Programma</span>
-          <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[4px] rounded-[1px] overflow-hidden">
-            <div 
-              class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
-              :style="{ width: `${programProgress.percent}%` }"
-            ></div>
-          </div>
-          <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
-            {{ programProgress.completed }}/{{ programProgress.total }} ({{ programProgress.percent }}%)
-          </span>
+      <!-- Row 2 & 3: Selettori e Progress Bar con padding compatto -->
+      <div class="px-3 py-2 flex flex-col gap-1.5">
+        <!-- Row 2: Session Selector (full width) -->
+        <div class="flex items-center gap-1 w-full dark:bg-[#1c202c] bg-white px-2 py-1 rounded-[2px] border dark:border-slate-700/80 border-slate-300 text-xs shadow-sm">
+          <select v-model="selectedProgram" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+            <option v-for="p in availablePrograms" :key="p" :value="p" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ getProgramLabel(p) }}</option>
+          </select>
+          <select v-model="selectedWeek" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+            <option v-for="w in availableWeeks" :key="w" :value="w" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">W{{ w }}</option>
+          </select>
+          <select v-model="selectedSession" @change="onFilterChange" class="flex-1 bg-transparent dark:text-slate-200 text-slate-800 font-bold focus:outline-none cursor-pointer text-center">
+            <option v-for="s in availableSessions" :key="s" :value="s" class="dark:bg-slate-900 bg-white dark:text-slate-200 text-slate-800">{{ s }}</option>
+          </select>
         </div>
 
-        <!-- Barra 2: Settimana -->
-        <div class="flex items-center gap-1.5" :title="`Progresso Settimana: ${weekProgress.completed}/${weekProgress.total} sedute (${weekProgress.percent}%)`">
-          <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Settimana</span>
-          <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[4px] rounded-[1px] overflow-hidden">
-            <div 
-              class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
-              :style="{ width: `${weekProgress.percent}%` }"
-            ></div>
+        <!-- Row 3: Dual Progress Bars Inline (Programma & Settimana) -->
+        <div class="flex flex-col gap-1 w-full px-0.5 text-[9.5px] font-mono font-semibold">
+          <!-- Barra 1: Programma -->
+          <div class="flex items-center gap-1.5" :title="`Progresso Programma: ${programProgress.completed}/${programProgress.total} sedute (${programProgress.percent}%)`">
+            <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Programma</span>
+            <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[4px] rounded-[1px] overflow-hidden">
+              <div 
+                class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+                :style="{ width: `${programProgress.percent}%` }"
+              ></div>
+            </div>
+            <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
+              {{ programProgress.completed }}/{{ programProgress.total }} ({{ programProgress.percent }}%)
+            </span>
           </div>
-          <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
-            {{ weekProgress.completed }}/{{ weekProgress.total }} ({{ weekProgress.percent }}%)
-          </span>
+
+          <!-- Barra 2: Settimana -->
+          <div class="flex items-center gap-1.5" :title="`Progresso Settimana: ${weekProgress.completed}/${weekProgress.total} sedute (${weekProgress.percent}%)`">
+            <span class="w-[52px] shrink-0 text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Settimana</span>
+            <div class="flex-1 bg-slate-300/80 dark:bg-slate-700/70 h-[4px] rounded-[1px] overflow-hidden">
+              <div 
+                class="bg-emerald-500 h-full transition-all duration-500 ease-out rounded-[1px]" 
+                :style="{ width: `${weekProgress.percent}%` }"
+              ></div>
+            </div>
+            <span class="min-w-[62px] shrink-0 text-right text-slate-600 dark:text-slate-300 font-bold tabular-nums">
+              {{ weekProgress.completed }}/{{ weekProgress.total }} ({{ weekProgress.percent }}%)
+            </span>
+          </div>
         </div>
       </div>
     </header>
-
-    <!-- SESSION BANNER TITLE CON PALESTRA_MOBILE.JPG -->
-    <div class="relative overflow-hidden py-1.5 px-3 text-center border-b dark:border-slate-800 border-slate-300 shadow-md">
-      
-      <!-- Immagine di Sfondo con Maschera Leggera -->
-      <div class="absolute inset-0 z-0">
-        <img src="palestra_mobile.jpg" alt="" class="w-full h-full object-cover object-center contrast-[1.05]" />
-        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/60"></div>
-      </div>
-
-      <!-- Contenuto Testuale in Primo Piano -->
-      <div class="relative z-10 flex flex-col items-center justify-center">
-        <div class="flex items-center justify-center gap-1.5">
-          <h2 class="text-xs sm:text-sm font-black uppercase tracking-widest font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-            SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
-          </h2>
-          <span v-if="isPlanningConfigPendingSync" class="text-[8.5px] font-mono font-bold uppercase px-1 py-0.2 rounded-[2px] bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-sm" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
-            Non sync
-          </span>
-        </div>
-        <p class="text-[10px] text-sky-300 font-mono font-bold tracking-wide mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
-          {{ getProgramBannerLabel(selectedProgram) }}
-        </p>
-      </div>
-
-    </div>
 
     <main class="flex-1 px-3 py-3 space-y-4">
 
