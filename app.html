@@ -684,8 +684,8 @@
 
       </section>
 
-      <!-- ================= TAB 4: STORICO ================= -->
-      <section v-if="activeTab === 'history'" class="space-y-4">
+      <!-- ================= TAB 4: DIARIO ================= -->
+      <section v-if="activeTab === 'history'" class="space-y-4 pb-16">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
           <div>
@@ -723,7 +723,7 @@
 
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Storico Allenamenti Salvati</h2>
+            <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider">Diario Allenamenti Salvati</h2>
             <span class="text-xs dark:text-slate-400 text-slate-500 font-mono">{{ workoutLogs.length }} sedute</span>
           </div>
 
@@ -771,6 +771,17 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Sticky Bottom Action Bar: Esporta Diario CSV -->
+        <div class="fixed bottom-[52px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex">
+          <button 
+            @click="exportDiaryToCSV" 
+            class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 border border-sky-400/30 cursor-pointer"
+          >
+            <span>📥</span>
+            <span>Esporta Diario in CSV</span>
+          </button>
         </div>
 
       </section>
@@ -3035,6 +3046,107 @@
           showToast('JSON copiato negli appunti!');
         }
 
+        function exportDiaryToCSV() {
+          const activeLogs = workoutLogs.value.filter(l => 
+            !l.isDeleted && l.performedExercises && l.performedExercises.length > 0
+          );
+
+          if (activeLogs.length === 0) {
+            showToast('Nessun allenamento registrato da esportare.');
+            return;
+          }
+
+          // Ordina dal più recente al più vecchio
+          const sortedLogs = [...activeLogs].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+          const headers = [
+            "Data",
+            "Programma",
+            "Label",
+            "Settimana",
+            "Seduta",
+            "Ripetuto",
+            "Esercizio",
+            "Categoria",
+            "Target",
+            "Set",
+            "Peso (kg)",
+            "Reps",
+            "RPE",
+            "Recupero",
+            "Note"
+          ];
+
+          const rows = [headers];
+
+          for (const l of sortedLogs) {
+            const isRep = l.isRepeated ? "Sì" : "No";
+            const progNum = Number(l.program) || 1;
+            const progLabel = (configProgramLabels.value && configProgramLabels.value[progNum]) 
+              ? String(configProgramLabels.value[progNum]).trim() 
+              : "";
+
+            for (const ex of (l.performedExercises || [])) {
+              const catLabel = getCategoryBadgeText(ex.category) || ex.category || "";
+              const sets = ex.sets || [];
+              for (let s = 0; s < sets.length; s++) {
+                const set = sets[s];
+                const hasData = (set.weight !== null && set.weight !== '') || 
+                                (set.reps !== null && set.reps !== '') || 
+                                (set.rpe && String(set.rpe).trim() !== '') || 
+                                (set.notes && String(set.notes).trim() !== '');
+                if (hasData) {
+                  rows.push([
+                    l.date || "",
+                    progNum,
+                    progLabel,
+                    l.week,
+                    l.session,
+                    isRep,
+                    ex.exerciseName || "",
+                    catLabel,
+                    ex.targetReference || "",
+                    set.setNum || (s + 1),
+                    set.weight !== null && set.weight !== undefined ? set.weight : "",
+                    set.reps !== null && set.reps !== undefined ? set.reps : "",
+                    set.rpe || "",
+                    set.rest || "",
+                    set.notes || ""
+                  ]);
+                }
+              }
+            }
+          }
+
+          if (rows.length <= 1) {
+            showToast('Nessuna serie valida da esportare.');
+            return;
+          }
+
+          const csvContent = rows.map(row => 
+            row.map(cell => {
+              const str = String(cell ?? '');
+              if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                return `"${str.replace(/"/g, '""')}"`;
+              }
+              return str;
+            }).join(',')
+          ).join('\r\n');
+
+          const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          const today = getTodayDateStr();
+          link.setAttribute('href', url);
+          link.setAttribute('download', `PowerTrack_Diario_${today}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          showToast('Diario esportato in CSV con successo!');
+        }
+
         async function processImageFile(file) {
           if (!file) return;
 
@@ -3458,7 +3570,8 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           onPlanningConfigChange,
           updateProgramLabel,
           programProgress,
-          weekProgress
+          weekProgress,
+          exportDiaryToCSV
         };
       }
     }).mount('#app');
