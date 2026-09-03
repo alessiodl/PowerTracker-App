@@ -122,7 +122,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-black">
 
-  <div id="app" class="flex-1 flex flex-col max-w-2xl w-full mx-auto pb-24 border-x dark:border-slate-800/80 border-slate-300 dark:bg-[#11131a] bg-[#eef2f6] transition-colors">
+  <div id="app" class="flex-1 flex flex-col max-w-2xl w-full mx-auto pb-36 border-x dark:border-slate-800/80 border-slate-300 dark:bg-[#11131a] bg-[#eef2f6] transition-colors">
     
     <header class="sticky top-0 z-30 dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-md border-b dark:border-slate-800 border-slate-300 shadow-sm transition-colors">
       
@@ -1352,23 +1352,23 @@
       </div>
     </div>
 
-    <!-- UNIFIED STICKY ACTION BAR (ABOVE BOTTOM NAV) -->
+    <!-- FLOATING STICKY ACTION BAR (ABOVE BOTTOM DOCK) -->
     <div 
       v-if="['plan', 'workout', 'catalog', 'history', 'sync'].includes(activeTab)"
-      class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2"
+      class="fixed bottom-[74px] left-3 right-3 max-w-[calc(42rem-1.5rem)] mx-auto z-30 flex items-center justify-center gap-2 transition-all"
     >
       <!-- TAB 1: SCHEDA -->
       <template v-if="activeTab === 'plan'">
         <button 
           @click="savePlan" 
-          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg border border-emerald-400/30 transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
         >
           <span>Salva Scheda</span>
         </button>
         <button 
           v-if="currentPlan.exercises.length > 0"
           @click="requestClearPlan" 
-          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
+          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm backdrop-blur-md transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
           title="Svuota tutti gli esercizi della scheda"
         >
           <span>Svuota</span>
@@ -1379,14 +1379,14 @@
       <template v-else-if="activeTab === 'workout'">
         <button 
           @click="saveWorkoutSession" 
-          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+          class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg border border-emerald-400/30 transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
         >
           <span>Concludi Allenamento</span>
         </button>
         <button 
           v-if="currentWorkout.performedExercises.length > 0"
           @click="requestClearWorkout" 
-          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
+          class="px-4 h-11 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm backdrop-blur-md transition-all active:scale-[0.99] shrink-0 flex items-center justify-center leading-none cursor-pointer"
           title="Svuota tutti gli esercizi dall'allenamento"
         >
           <span>Svuota</span>
@@ -1397,7 +1397,7 @@
       <template v-else-if="activeTab === 'catalog'">
         <button 
           @click="saveCatalog" 
-          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg border border-emerald-400/30 transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
         >
           <span>Salva Catalogo</span>
         </button>
@@ -1407,7 +1407,7 @@
       <template v-else-if="activeTab === 'history'">
         <button 
           @click="exportDiaryToCSV" 
-          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg border border-emerald-400/30 transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
         >
           <span>Esporta Diario in CSV</span>
         </button>
@@ -1418,7 +1418,7 @@
         <button 
           @click="triggerManualSync" 
           :disabled="isSyncingCloud || !webhookUrl"
-          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer leading-none"
+          class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg border border-emerald-400/30 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer leading-none"
         >
           <div v-if="isSyncingCloud" class="flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay: -0.32s;"></span>
@@ -1430,15 +1430,15 @@
       </template>
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto h-[50px] dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1 z-40 transition-colors flex items-center">
+    <!-- FLOATING BOTTOM NAVIGATION DOCK -->
+    <nav class="fixed bottom-3 left-3 right-3 max-w-[calc(42rem-1.5rem)] mx-auto h-[54px] dark:bg-[#151822]/95 bg-white/95 backdrop-blur-xl border dark:border-slate-700/80 border-slate-300/80 rounded-2xl px-1.5 py-1 z-40 shadow-[0_8px_30px_rgb(0,0,0,0.18)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.45)] transition-all flex items-center">
       <div class="grid grid-cols-6 gap-1 text-center w-full">
         
         <!-- Tab 1: SCHEDA -->
         <button 
           @click="activeTab = 'plan'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'plan' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'plan' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <img :src="getIcon('scheda')" class="w-5 h-5 object-contain" alt="Scheda" />
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SCHEDA</span>
@@ -1447,8 +1447,8 @@
         <!-- Tab 2: ALLENAMENTO -->
         <button 
           @click="activeTab = 'workout'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'workout' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'workout' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <img :src="getIcon('allenamento')" class="w-5 h-5 object-contain" alt="Allenamento" />
           <span class="text-[8px] sm:text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">ALLENAMENTO</span>
@@ -1457,8 +1457,8 @@
         <!-- Tab 3: LIVELLI -->
         <button 
           @click="activeTab = 'levels'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'levels' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'levels' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <img :src="getIcon('livelli')" class="w-5 h-5 object-contain" alt="Livelli" />
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
@@ -1467,8 +1467,8 @@
         <!-- Tab 4: DIARIO -->
         <button 
           @click="activeTab = 'history'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'history' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'history' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <img :src="getIcon('storico')" class="w-5 h-5 object-contain" alt="Diario" />
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">DIARIO</span>
@@ -1477,8 +1477,8 @@
         <!-- Tab 5: CATALOGO -->
         <button 
           @click="activeTab = 'catalog'" 
-          class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'catalog' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'catalog' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <img :src="getIcon('catalogo')" class="w-5 h-5 object-contain" alt="Catalogo" />
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CATALOGO</span>
@@ -1487,8 +1487,8 @@
         <!-- Tab 6: SYNC & CONFIG -->
         <button 
           @click="activeTab = 'sync'" 
-          class="relative flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
-          :class="activeTab === 'sync' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          class="relative flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all"
+          :class="activeTab === 'sync' ? 'text-sky-600 dark:text-sky-400 font-extrabold dark:bg-[#202534] bg-sky-50 border dark:border-slate-600/70 border-sky-200 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
           <div class="relative flex items-center justify-center">
             <img :src="getIcon('sync')" class="w-5 h-5 object-contain" alt="Sync" />
