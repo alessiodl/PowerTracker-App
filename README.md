@@ -13,11 +13,11 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
    * [Tab 3: LIVELLI (Calcolatore Percentuali e Standard di Forza)](#tab-3-livelli-calcolatore-percentuali-e-standard-di-forza)
    * [Tab 4: DIARIO (Analisi Sedute e Progressioni)](#tab-4-diario-analisi-sedute-e-progressioni)
    * [Tab 5: CATALOGO (Esercizi e Categorie)](#tab-5-catalogo-esercizi-e-categorie)
-   * [Tab 6: SYNC & CONFIG (Sincronizzazione e Reset)](#tab-6-sync--config-sincronizzazione-e-reset)
+   * [Tab 6: CONFIG (Pianificazione, Sincronizzazione e Reset)](#tab-6-config-pianificazione-sincronizzazione-e-reset)
 3. [Manuale di Sincronizzazione e Multi-Dispositivo](#3-manuale-di-sincronizzazione-e-multi-dispositivo)
    * [Come funziona la sincronizzazione a 2 vie](#come-funziona-la-sincronizzazione-a-2-vie)
    * [Gestione di più dispositivi (Telefono palestra offline + PC + Telefono principale)](#gestione-di-più-dispositivi)
-   * [I fogli generati su Google Sheets (`Allenamenti`, `Schede`, `Catalogo`, `Analisi`)](#i-fogli-generati-su-google-sheets)
+   * [I fogli generati su Google Sheets (`Allenamenti`, `Schede`, `Catalogo`, `Analisi`, `Configurazione`)](#i-fogli-generati-su-google-sheets)
    * [Procedura di Reset e Pulizia Totale dello Sheet](#procedura-di-reset-e-pulizia-totale-dello-sheet)
 4. [Setup Tecnico: Google Apps Script Webhook](#4-setup-tecnico-google-apps-script-webhook)
 5. [Setup Funzionalità IA (Google Gemini)](#5-setup-funzionalità-ia-google-gemini)
@@ -44,7 +44,7 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
 
 ### Tab 1: SCHEDA (Pianificazione Target)
 Consente di pianificare la scheda di allenamento per il blocco attivo:
-* **Selettore Sessione**: In alto seleziona **Programma** (1-6 con etichette personalizzate opzionali), **Settimana** (da 4 a 20) e **Seduta** (da A fino a F, configurabili a piacere).
+* **Selettore Sessione**: In alto seleziona **Programma** (1-6 con etichette personalizzate opzionali), **Settimana** (da 4 a 28) e **Seduta** (da A fino a F, configurabili a piacere).
 * **Definizione Esercizi**: Inserisci gli esercizi dal menu a tendina o aggiungine di nuovi; imposta il target (es. `4x5 @70%` o `1x1 @8 + 3x4 @75%`), il recupero previsto e le note tecniche.
 * **Importazione Scheda con IA**:
   * `Camera`: Scatta direttamente una foto della scheda cartacea con la fotocamera posteriore dello smartphone.
@@ -65,7 +65,7 @@ La schermata principale utilizzata durante l'allenamento in palestra:
   * **RPE / RIR**: Inserisci lo sforzo percepito (es. `8`, `8.5`, `9`).
   * **Recupero Rapido**: Tasti rapidi (1m, 1.5m, 2m, 3m, 4m, 5m) per inserire al volo il tempo di recupero desiderato.
   * **Note per Set**: Icona dedicata per appunti tecnici su singole serie (es. *"cintura stretta"*, *"piede scivolato"*).
-* **Pulsanti Azione**: **`CONCLUDI E SINCRONIZZA`** (verde) per registrare la seduta nello storico e avviare la sync, **`SVUOTA`** (rosso) per cancellare i dati della sessione in corso.
+* **Pulsanti Azione**: **`CONCLUDI ALLENAMENTO`** (verde) per registrare la seduta nello storico e incrementare il contatore delle modifiche pendenti, **`SVUOTA`** (rosso) per cancellare i dati della sessione in corso.
 
 ---
 
@@ -83,6 +83,7 @@ La schermata principale utilizzata durante l'allenamento in palestra:
   * `Carica`: Riapre la seduta nella tab Allenamento per eventuali modifiche/correzioni.
   * `Dati`: Ispezione del payload JSON puro inviato a Google Sheets, con tasto `Copia JSON`.
   * `Elimina` (rosso): Elimina la seduta dallo storico (con popup di conferma).
+* **Pulsante Azione**: **`ESPORTA DIARIO IN CSV`** (verde) per scaricare in locale l'intero archivio degli allenamenti con colonna Label personalizzata in formato CSV UTF-8.
 
 ---
 
@@ -98,11 +99,11 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 
 ---
 
-### Tab 6: SYNC & CONFIG (Sincronizzazione, Struttura & Reset)
+### Tab 6: CONFIG (Pianificazione, Sincronizzazione & Reset)
 * **Stato Sincronizzazione**: Visualizza l'orario dell'ultima sync e il contatore delle modifiche in sospeso (*"X elementi in attesa"*).
 * **Pulsante `SINCRONIZZA ORA`**: Esegue la sincronizzazione manuale a 2 vie istantanea con Google Sheets.
-* **Struttura e Pianificazione (Sottomenu Collassabile)**:
-  * Permette di personalizzare: **Giorni a settimana** (da 2 a 6, sedute A-F), **Settimane per ciclo** (da 4 a 20) e **Numero di Programmi** (da 1 a 6 con etichette opzionali, es. *Accumulo*, *Intensificazione*).
+* **Pianificazione (Sottomenu Collassabile)**:
+  * Mostra il badge sintetico (es. `4G • 14W • 2P`) e permette di personalizzare: **Giorni a settimana** (da 2 a 6, sedute A-F), **Settimane per ciclo** (da 4 a 28) e **Numero di Programmi** (da 1 a 6 con etichette opzionali, es. *Accumulo*, *Intensificazione*).
 * **Configurazione e Chiavi (Sottomenu Collassabile)**:
   * Box chiuso di default per evitare tocchi accidentali.
   * **Modalità Sola Lettura**: Mostra i campi bloccati e mascherati (`••••••••`).
@@ -117,8 +118,8 @@ Il database centrale dei tuoi movimenti, raggruppati in 3 blocchi:
 ## 3. MANUALE DI SINCRONIZZAZIONE E MULTI-DISPOSITIVO
 
 ### Come funziona la sincronizzazione a 2 vie
-1. Ogni modifica effettuata sul telefono (salvataggio scheda, fine allenamento, cancellazione) aggiorna all'istante il database locale IndexedDB a zero latenza e segna l'elemento come `_dirty: true`, mostrando il badge numerico delle modifiche in sospeso sulla scheda SYNC.
-2. Quando desideri sincronizzare e il dispositivo è online, premendo **`SINCRONIZZA ORA`** nella scheda SYNC (o l'icona nuvola della singola seduta nello Storico), l'app invia il delta a Google Apps Script.
+1. Ogni modifica effettuata sul telefono (salvataggio scheda, fine allenamento, cancellazione) aggiorna all'istante il database locale IndexedDB a zero latenza e segna l'elemento come `_dirty: true`, mostrando il badge numerico delle modifiche in sospeso sulla scheda CONFIG.
+2. Quando desideri sincronizzare e il dispositivo è online, premendo **`SINCRONIZZA ORA`** nella scheda CONFIG (o l'icona nuvola della singola seduta nello Storico), l'app invia il delta a Google Apps Script.
 3. Lo script su Google Sheets esegue il merge con risoluzione automatica dei timestamp (*Last-Write-Wins*) e restituisce lo stato aggiornato all'app.
 
 ---
@@ -151,7 +152,7 @@ Quando desideri fare tabula rasa (ad esempio all'avvio di un nuovo anno sportivo
 1. **(Consigliato) Crea una copia di Backup**:  
    Nel Google Sheet clicca su **File** $\rightarrow$ **Crea una copia** (es. *"PowerTrack_Backup_2025"*).
 2. **Esegui il Reset e Sincronizza su tutti i dispositivi e browser**:  
-   * Sul telefono principale vai in `SYNC` $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
+   * Sul telefono principale vai in `CONFIG` $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
    * Connetti al Wi-Fi il telefono da palestra (rugged) $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.
    * Sul browser del PC / Web App (se utilizzata) $\rightarrow$ premi **`RESET`** $\rightarrow$ premi **`SINCRONIZZA ORA`**.  
    *(In questo modo la memoria locale di ogni dispositivo e browser è azzerata a 0 record)*.
