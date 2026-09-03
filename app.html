@@ -221,7 +221,7 @@
     <main class="flex-1 px-3 py-3 space-y-4">
 
       <!-- ================= TAB 1: SCHEDA TARGET (PLAN EDITOR) ================= -->
-      <section v-if="activeTab === 'plan'" class="space-y-4 pb-16">
+      <section v-if="activeTab === 'plan'" class="space-y-4 pb-20">
         
         <!-- Action Header Card -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3 border dark:border-slate-700/70 border-slate-300 shadow-sm space-y-2.5">
@@ -361,7 +361,7 @@
         </div>
 
         <!-- Sticky Bottom Action Bar: Salva Scheda + Svuota -->
-        <div class="fixed bottom-[51px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
+        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
           <button 
             @click="savePlan" 
             class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
@@ -381,7 +381,7 @@
       </section>
 
       <!-- ================= TAB 2: ALLENAMENTO (LIVE WORKOUT) ================= -->
-      <section v-if="activeTab === 'workout'" class="space-y-4 pb-16">
+      <section v-if="activeTab === 'workout'" class="space-y-4 pb-20">
         
         <!-- Workout Header Meta Card -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-2 border dark:border-slate-700/70 border-slate-300 shadow-sm">
@@ -595,7 +595,7 @@
         </div>
 
         <!-- Sticky Bottom Action Bar: Concludi Allenamento + Svuota -->
-        <div class="fixed bottom-[51px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
+        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
           <button 
             @click="saveWorkoutSession" 
             class="flex-1 h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
@@ -615,7 +615,7 @@
       </section>
 
       <!-- ================= TAB 3: CATALOGO ESERCIZI ================= -->
-      <section v-if="activeTab === 'catalog'" class="space-y-4 pb-16">
+      <section v-if="activeTab === 'catalog'" class="space-y-4 pb-20">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
           <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-2">Nuovo Esercizio in Catalogo</h2>
@@ -674,7 +674,7 @@
         </div>
 
         <!-- Sticky Bottom Action Bar: Salva Catalogo -->
-        <div class="fixed bottom-[51px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
+        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
           <button 
             @click="saveCatalog" 
             class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
@@ -686,7 +686,7 @@
       </section>
 
       <!-- ================= TAB 4: DIARIO ================= -->
-      <section v-if="activeTab === 'history'" class="space-y-4 pb-16">
+      <section v-if="activeTab === 'history'" class="space-y-4 pb-20">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm space-y-2.5">
           <div>
@@ -775,7 +775,7 @@
         </div>
 
         <!-- Sticky Bottom Action Bar: Esporta Diario CSV -->
-        <div class="fixed bottom-[51px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
+        <div class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 !m-0 !mt-0 !mb-0 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2">
           <button 
             @click="exportDiaryToCSV" 
             class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center leading-none cursor-pointer"
