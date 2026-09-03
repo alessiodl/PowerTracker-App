@@ -1500,7 +1500,7 @@
                 {{ pendingChangesCount > 99 ? '99+' : pendingChangesCount }}
               </span>
             </div>
-            <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">SYNC</span>
+            <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">CONFIG</span>
           </button>
         </div>
       </nav>
@@ -3147,7 +3147,7 @@
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
 
-          showToast('Diario esportato in CSV con successo!');
+          showToast('✓ Diario esportato in CSV con successo!');
         }
 
         async function processImageFile(file) {
