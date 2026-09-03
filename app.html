@@ -221,7 +221,7 @@
     <main class="flex-1 px-3 py-3 space-y-4">
 
       <!-- ================= TAB 1: SCHEDA TARGET (PLAN EDITOR) ================= -->
-      <section v-if="activeTab === 'plan'" class="space-y-4">
+      <section v-if="activeTab === 'plan'" class="space-y-4 pb-16">
         
         <!-- Action Header Card -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3 border dark:border-slate-700/70 border-slate-300 shadow-sm space-y-2.5">
@@ -360,17 +360,18 @@
           </select>
         </div>
 
-        <div class="flex gap-2">
+        <!-- Sticky Bottom Action Bar: Salva Scheda + Svuota -->
+        <div class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
           <button 
             @click="savePlan" 
-            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+            class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center cursor-pointer"
           >
             <span>Salva Scheda</span>
           </button>
           <button 
             v-if="currentPlan.exercises.length > 0"
             @click="requestClearPlan" 
-            class="px-3.5 py-3.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center"
+            class="px-3.5 py-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center cursor-pointer"
             title="Svuota tutti gli esercizi della scheda"
           >
             <span>Svuota</span>
@@ -380,7 +381,7 @@
       </section>
 
       <!-- ================= TAB 2: ALLENAMENTO (LIVE WORKOUT) ================= -->
-      <section v-if="activeTab === 'workout'" class="space-y-4">
+      <section v-if="activeTab === 'workout'" class="space-y-4 pb-16">
         
         <!-- Workout Header Meta Card -->
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-2 border dark:border-slate-700/70 border-slate-300 shadow-sm">
@@ -593,18 +594,18 @@
           </div>
         </div>
 
-        <!-- Main Save Button Row with Clear Button -->
-        <div class="flex gap-2">
+        <!-- Sticky Bottom Action Bar: Concludi Allenamento + Svuota -->
+        <div class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
           <button 
             @click="saveWorkoutSession" 
-            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+            class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center cursor-pointer"
           >
             <span>Concludi Allenamento</span>
           </button>
           <button 
             v-if="currentWorkout.performedExercises.length > 0"
             @click="requestClearWorkout" 
-            class="px-3.5 py-3.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center"
+            class="px-3.5 py-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-xs uppercase tracking-wider rounded-[2px] shadow-sm transition-all active:scale-[0.99] shrink-0 flex items-center justify-center cursor-pointer"
             title="Svuota tutti gli esercizi dall'allenamento"
           >
             <span>Svuota</span>
@@ -614,7 +615,7 @@
       </section>
 
       <!-- ================= TAB 3: CATALOGO ESERCIZI ================= -->
-      <section v-if="activeTab === 'catalog'" class="space-y-4">
+      <section v-if="activeTab === 'catalog'" class="space-y-4 pb-16">
         
         <div class="dark:bg-[#1c202c] bg-white rounded-[2px] p-3.5 border dark:border-slate-700 border-slate-300 shadow-sm">
           <h2 class="font-extrabold dark:text-slate-100 text-slate-900 text-xs uppercase tracking-wider mb-2">Nuovo Esercizio in Catalogo</h2>
@@ -672,11 +673,11 @@
           </div>
         </div>
 
-        <!-- Main Save Catalog Button -->
-        <div class="flex gap-2 pt-1">
+        <!-- Sticky Bottom Action Bar: Salva Catalogo -->
+        <div class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
           <button 
             @click="saveCatalog" 
-            class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center"
+            class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center cursor-pointer"
           >
             <span>Salva Catalogo</span>
           </button>
@@ -774,12 +775,11 @@
         </div>
 
         <!-- Sticky Bottom Action Bar: Esporta Diario CSV -->
-        <div class="fixed bottom-[52px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex">
+        <div class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center gap-2">
           <button 
             @click="exportDiaryToCSV" 
-            class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 border border-sky-400/30 cursor-pointer"
+            class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-[2px] shadow-md transition-all active:scale-[0.99] flex items-center justify-center cursor-pointer"
           >
-            <span>📥</span>
             <span>Esporta Diario in CSV</span>
           </button>
         </div>
