@@ -1407,14 +1407,14 @@
           <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">LIVELLI</span>
         </button>
 
-        <!-- Tab 4: STORICO -->
+        <!-- Tab 4: DIARIO -->
         <button 
           @click="activeTab = 'history'" 
           class="flex flex-col items-center py-1 px-0.5 rounded-[2px] transition-all"
           :class="activeTab === 'history' ? 'text-emerald-500 font-extrabold dark:bg-[#1c202c] bg-white border dark:border-slate-700 border-slate-300 shadow-sm' : 'dark:text-slate-400 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
         >
-          <img :src="getIcon('storico')" class="w-5 h-5 object-contain" alt="Storico" />
-          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">STORICO</span>
+          <img :src="getIcon('storico')" class="w-5 h-5 object-contain" alt="Diario" />
+          <span class="text-[8.5px] font-mono mt-0.5 tracking-tighter truncate w-full">DIARIO</span>
         </button>
 
         <!-- Tab 5: CATALOGO -->
@@ -2680,7 +2680,7 @@
         // =========================================================
         async function syncWithCloud({ silent = false } = {}) {
           if (!webhookUrl.value || !webhookUrl.value.trim()) {
-            if (!silent) showToast('Configura prima l\'URL del Webhook in "SYNC & STORICO"!');
+            if (!silent) showToast('Configura prima l\'URL del Webhook in "SYNC"!');
             return;
           }
           if (!navigator.onLine) {

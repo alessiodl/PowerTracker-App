@@ -11,7 +11,7 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
    * [Tab 1: SCHEDA (Pianificazione Target)](#tab-1-scheda-pianificazione-target)
    * [Tab 2: ALLENAMENTO (Sessione Live)](#tab-2-allenamento-sessione-live)
    * [Tab 3: LIVELLI (Calcolatore Percentuali e Standard di Forza)](#tab-3-livelli-calcolatore-percentuali-e-standard-di-forza)
-   * [Tab 4: STORICO (Analisi Sedute e Progressioni)](#tab-4-storico-analisi-sedute-e-progressioni)
+   * [Tab 4: DIARIO (Analisi Sedute e Progressioni)](#tab-4-diario-analisi-sedute-e-progressioni)
    * [Tab 5: CATALOGO (Esercizi e Categorie)](#tab-5-catalogo-esercizi-e-categorie)
    * [Tab 6: SYNC & CONFIG (Sincronizzazione e Reset)](#tab-6-sync--config-sincronizzazione-e-reset)
 3. [Manuale di Sincronizzazione e Multi-Dispositivo](#3-manuale-di-sincronizzazione-e-multi-dispositivo)
@@ -76,7 +76,7 @@ La schermata principale utilizzata durante l'allenamento in palestra:
 
 ---
 
-### Tab 4: STORICO (Analisi Sedute e Progressioni)
+### Tab 4: DIARIO (Analisi Sedute e Progressioni)
 * **Ricerca e Storico per Esercizio**: Seleziona o cerca un esercizio (es. *"Squat"*) per vedere l'elenco cronologico di tutte le volte che è stato eseguito, con carichi, serie e note.
 * **Elenco Sedute Registrate**:
   * Badge stato: **`✓`** (Sincronizzato sul Cloud) o **`LOCALE`** (in attesa di connessione).
