@@ -142,14 +142,9 @@
 
         <!-- Centro: Testo Seduta e Programma -->
         <div class="relative z-10 flex flex-col items-center justify-center text-center px-2 min-w-0">
-          <div class="flex items-center justify-center gap-1.5 flex-wrap">
-            <h2 class="text-xs sm:text-sm font-black uppercase tracking-wider font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] leading-tight">
-              SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
-            </h2>
-            <span v-if="isPlanningConfigPendingSync" class="text-[8px] font-mono font-bold uppercase px-1 py-0.2 rounded-[2px] bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow-sm shrink-0" title="Configurazione della struttura non ancora sincronizzata su Google Sheets">
-              Non sync
-            </span>
-          </div>
+          <h2 class="text-xs sm:text-sm font-black uppercase tracking-wider font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] leading-tight">
+            SETTIMANA {{ selectedWeek }} &bull; ALLENAMENTO {{ selectedSession }}
+          </h2>
           <p class="text-[9.5px] sm:text-[10px] text-sky-300 font-mono font-bold tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] truncate max-w-[200px] sm:max-w-xs">
             {{ getProgramBannerLabel(selectedProgram) }}
           </p>
