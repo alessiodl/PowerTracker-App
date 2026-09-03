@@ -1378,7 +1378,7 @@
     <!-- UNIFIED STICKY ACTION BAR (ABOVE BOTTOM NAV) -->
     <div 
       v-if="['plan', 'workout', 'catalog', 'history'].includes(activeTab)"
-      class="fixed bottom-[49px] left-0 right-0 max-w-2xl mx-auto px-3 py-2 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2"
+      class="fixed bottom-[50px] left-0 right-0 max-w-2xl mx-auto px-3 py-2.5 bg-[#eef2f6]/95 dark:bg-[#11131a]/95 backdrop-blur-md border-t dark:border-slate-800 border-slate-300 z-30 shadow-lg flex items-center justify-center gap-2"
     >
       <!-- TAB 1: SCHEDA -->
       <template v-if="activeTab === 'plan'">
@@ -1438,8 +1438,8 @@
     </div>
 
     <!-- BOTTOM NAVIGATION BAR -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1.5 z-40 transition-colors">
-      <div class="grid grid-cols-6 gap-1 text-center">
+    <nav class="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto h-[50px] dark:bg-[#11131a]/95 bg-[#eef2f6]/95 backdrop-blur-lg border-t dark:border-slate-800 border-slate-300 px-1.5 py-1 z-40 transition-colors flex items-center">
+      <div class="grid grid-cols-6 gap-1 text-center w-full">
         
         <!-- Tab 1: SCHEDA -->
         <button 
