@@ -46,11 +46,12 @@ PowerTrack è una Progressive Web App (PWA) avanzata e ultra-leggera progettata 
 Consente di pianificare la scheda di allenamento per il blocco attivo:
 * **Selettore Sessione**: In alto seleziona **Programma** (1-6 con etichette personalizzate opzionali), **Settimana** (da 4 a 28) e **Seduta** (da A fino a F, configurabili a piacere).
 * **Definizione Esercizi**: Inserisci gli esercizi dal menu a tendina o aggiungine di nuovi; imposta il target (es. `4x5 @70%` o `1x1 @8 + 3x4 @75%`), il recupero previsto e le note tecniche.
-* **Importazione Scheda con IA**:
+* **Importazione Scheda (IA & JSON)**:
   * `Camera`: Scatta direttamente una foto della scheda cartacea con la fotocamera posteriore dello smartphone.
   * `Galleria`: Carica una foto o screenshot salvato nei file/galleria del dispositivo.
-  * `Appunti`: Incolla direttamente il testo o l'immagine copiata negli appunti (supporta anche `Ctrl+V` da tastiera).
-  * L'IA (Gemini Flash) estrarrà automaticamente esercizi, categorie, carichi target e note.
+  * `Appunti` *(solo PC)*: Incolla direttamente l'immagine dagli appunti (supporta anche `Ctrl+V` da tastiera).
+  * `JSON` *(solo PC)*: Importa la scheda a partire da uno schema JSON pre-formattato. Include il pulsante rapido **"Copia Prompt per IA"** per richiedere a ChatGPT o Claude la conversione della scheda (con l'elenco dei tuoi esercizi da catalogo già incluso per massima coerenza dei nomi), aggirando qualsiasi limite o sovraccarico di rete.
+  * L'estrazione crea o associa in automatico gli esercizi a catalogo, le categorie, i carichi target, i recuperi e le note tecniche.
 * **Riordino**: Usa le frecce `▲` / `▼` per organizzare la sequenza degli esercizi.
 * **Pulsanti Azione**: **`SALVA SCHEDA`** (verde) per salvare in locale e **`SVUOTA`** (rosso tenue) per azzerare la pianificazione del giorno.
 
@@ -579,7 +580,8 @@ function doPost(e) {
 4. Ora puoi importare all'istante schede e carichi scattando foto o incollando screenshot nella scheda `SCHEDA`.
 
 ### Risoluzione problemi IA:
-* **Errore API o Modello non disponibile**: Se Google dovesse aggiornare o dismettere una versione del modello, verifica lo stato della chiave su AI Studio o aggiorna il nome del modello (es. `gemini-2.0-flash`) alla riga `apiUrl` in `index.html`.
+* **Errore API o Modello non disponibile**: Se Google dovesse aggiornare o dismettere una versione del modello, verifica lo stato della chiave su AI Studio o aggiorna il nome del modello alla riga `apiUrl` in `app.html`.
+* **Server IA occupato o rate limit del modello gratuito**: Nei momenti di picco o con foto molto pesanti, i server gratuiti possono restituire temporaneamente errore di sovraccarico. Da PC puoi usare il pulsante **`JSON`**: tocca *Copia Prompt per IA*, incollalo su ChatGPT o Claude assieme all'immagine o testo della scheda e importa direttamente il JSON in un click.
 * **Estrazione imprecisa o fallita**: Assicurati che l'immagine sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda usando il pulsante **`Incolla appunti`** (o premendo `Ctrl+V` da PC).
 
 

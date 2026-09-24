@@ -220,7 +220,7 @@
             <span v-if="isImportingImage" class="text-[10px] font-mono font-bold text-amber-500 animate-pulse">Analisi IA in corso...</span>
           </div>
 
-          <div class="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
             <!-- 1. Camera (Direct capture) -->
             <label 
               class="justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm text-center"
@@ -248,16 +248,30 @@
               @click="handleClipboardPaste" 
               :disabled="isImportingImage"
               class="hidden lg:flex justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 items-center justify-center gap-1 transition-all shadow-sm disabled:opacity-50"
-              title="Incolla immagine o testo dagli appunti (o usa Ctrl+V)"
+              title="Incolla immagine dagli appunti (o usa Ctrl+V)"
             >
               <img :src="getIcon('incolla_appunti')" class="w-3.5 h-3.5 object-contain" alt="" />
               <span>Appunti</span>
+            </button>
+
+            <!-- 4. JSON / ChatGPT - Attivo solo su Desktop / PC (lg: >= 1024px) -->
+            <button 
+              @click="openJsonImportModal" 
+              :disabled="isImportingImage"
+              class="hidden lg:flex justify-center px-2 py-1.5 dark:bg-slate-800 bg-sky-50 dark:hover:bg-slate-700 hover:bg-sky-100 dark:text-sky-400 text-sky-700 rounded-[2px] text-xs font-mono font-bold border border-sky-500/40 items-center justify-center gap-1 transition-all shadow-sm disabled:opacity-50"
+              title="Importa scheda da schema JSON o prompt ChatGPT/Claude (solo da PC)"
+            >
+              <svg class="w-3.5 h-3.5 object-contain text-sky-500 dark:text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+              <span>JSON</span>
             </button>
           </div>
 
           <p class="text-xs dark:text-slate-300 text-slate-600 leading-relaxed dark:bg-slate-950 bg-slate-100 p-2 rounded-[2px] border dark:border-slate-800 border-slate-200 flex items-start gap-1.5">
             <img :src="getIcon('suggerimento')" class="w-3.5 h-3.5 mt-0.5 shrink-0 object-contain" alt="" />
-            <span>Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi scattare una foto, caricarla dalla galleria o incollare la scheda con Ctrl+V.</span>
+            <span>Definisci qui gli esercizi e i carichi target previsti per la settimana {{ selectedWeek }} (Giorno {{ selectedSession }}). Puoi scattare una foto, caricarla dalla galleria, incollare con Ctrl+V o importare da schema JSON (da PC).</span>
           </p>
         </div>
 
@@ -1325,6 +1339,102 @@
       </div>
     </div>
 
+    <!-- JSON IMPORT MODAL (DESKTOP / SCHEMA JSON / CHATGPT) -->
+    <div v-if="showJsonImportModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="dark:bg-[#1c202c] bg-white rounded-[2px] border dark:border-slate-700 border-slate-300 max-w-xl w-full p-4 shadow-2xl flex flex-col max-h-[90vh]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-2 mb-2 border-b dark:border-slate-800 border-slate-200">
+          <div class="flex items-center gap-2">
+            <span class="font-mono font-extrabold text-sm text-sky-500">{ }</span>
+            <h3 class="font-extrabold text-xs font-mono uppercase dark:text-slate-100 text-slate-900">
+              Importa Scheda da JSON / Assistente IA
+            </h3>
+            <span class="px-1.5 py-0.5 bg-sky-500/10 text-sky-500 text-[10px] font-mono font-bold rounded-[2px] border border-sky-500/30">
+              W{{ selectedWeek }} • Giorno {{ selectedSession }}
+            </span>
+          </div>
+          <button @click="closeJsonImportModal" class="dark:text-slate-400 text-slate-500 hover:text-red-500 font-bold text-sm">✕</button>
+        </div>
+
+        <div class="overflow-y-auto space-y-3 pr-1 text-xs">
+          
+          <!-- Helper / Prompt Card -->
+          <div class="p-2.5 rounded-[2px] dark:bg-slate-900 bg-sky-50/50 border dark:border-slate-800 border-sky-200 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-[11px] font-mono uppercase tracking-wide text-sky-700 dark:text-sky-400">
+                1. Genera con ChatGPT / Claude
+              </span>
+              <button 
+                @click="copyJsonImportPrompt" 
+                class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white font-mono font-bold text-[11px] rounded-[2px] flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              >
+                <span>{{ isPromptCopied ? '✓ Prompt Copiato!' : 'Copia Prompt per IA' }}</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Copia il prompt, incollalo su ChatGPT/Claude assieme allo screenshot o testo della scheda. Il prompt include già l'elenco dei tuoi esercizi da catalogo per mantenere i nomi coerenti.
+            </p>
+          </div>
+
+          <!-- Input Area Card -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-[11px] font-mono uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                2. Incolla il JSON risultante
+              </label>
+              <!-- Optional file picker -->
+              <label class="text-[11px] font-mono font-bold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer">
+                <span>📁 Carica file .json</span>
+                <input type="file" accept=".json,application/json" @change="handleJsonFileUpload" class="hidden" />
+              </label>
+            </div>
+            <textarea
+              v-model="jsonImportInput"
+              rows="6"
+              placeholder='Incolla qui il JSON, ad es:
+[
+  { "exerciseName": "Squat", "category": "main", "target": "120kg 4x5", "rest": "3&apos;", "notes": "Fermo 1s" }
+]'
+              class="w-full p-2.5 rounded-[2px] dark:bg-slate-950 bg-slate-50 dark:text-sky-300 text-sky-900 border dark:border-slate-800 border-slate-300 font-mono text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none resize-y"
+            ></textarea>
+          </div>
+
+          <!-- Feedback / Parsing Preview -->
+          <div v-if="jsonImportError" class="p-2 rounded-[2px] bg-red-500/10 border border-red-500/30 text-red-500 font-mono text-[11px]">
+            ⚠️ {{ jsonImportError }}
+          </div>
+
+          <div v-else-if="parsedJsonExercises.length > 0" class="p-2 rounded-[2px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] space-y-1">
+            <div class="font-bold">
+              ✓ Riconosciuti {{ parsedJsonExercises.length }} esercizi per il Giorno {{ selectedSession }}:
+            </div>
+            <div class="max-h-24 overflow-y-auto space-y-0.5 text-[10px] opacity-90 pl-1">
+              <div v-for="(ex, i) in parsedJsonExercises" :key="i" class="truncate">
+                • <strong>{{ ex.exerciseName }}</strong> ({{ ex.category }}): {{ ex.target || 'Nessun target specificato' }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer actions -->
+        <div class="mt-3 pt-2 border-t dark:border-slate-800 border-slate-200 flex justify-end gap-2">
+          <button @click="closeJsonImportModal" class="px-3 py-1.5 dark:bg-slate-800 bg-slate-200 text-xs font-mono font-bold rounded-[2px] dark:text-slate-200 text-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700">
+            Annulla
+          </button>
+          <button 
+            @click="applyJsonImport" 
+            :disabled="parsedJsonExercises.length === 0"
+            class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-mono font-bold rounded-[2px] shadow-sm transition-all"
+          >
+            Importa nella Scheda ({{ parsedJsonExercises.length }})
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- FULLSCREEN SYNCING BLOCKER MODAL -->
     <div v-if="isSyncingCloud" class="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
       <div class="dark:bg-[#1c202c] bg-white p-5 rounded-[2px] border dark:border-slate-700 border-slate-300 shadow-2xl flex flex-col items-center space-y-3 max-w-xs w-full">
@@ -1928,6 +2038,11 @@
 
         // Dialog Avviso Errore IA
         const aiErrorDialog = ref(null);
+
+        // Dialog Importazione Scheda da JSON (Desktop)
+        const showJsonImportModal = ref(false);
+        const jsonImportInput = ref('');
+        const isPromptCopied = ref(false);
 
         function askConfirm(title, message, action) {
           confirmDialog.value = { title, message, action };
@@ -3328,6 +3443,158 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           }
         }
 
+        // =========================================================
+        // IMPORTAZIONE SCHEDA DA SCHEMA JSON / CHATGPT (DESKTOP)
+        // =========================================================
+        function openJsonImportModal() {
+          jsonImportInput.value = '';
+          isPromptCopied.value = false;
+          showJsonImportModal.value = true;
+        }
+
+        function closeJsonImportModal() {
+          showJsonImportModal.value = false;
+          jsonImportInput.value = '';
+          isPromptCopied.value = false;
+        }
+
+        async function copyJsonImportPrompt() {
+          const catalogNames = exercises.value.map(e => e.name).join(', ');
+          const promptText = `Sei un esperto sviluppatore e coach di powerlifting. Analizza la seguente immagine/screenshot o testo di una scheda di allenamento.
+Estrai tutti gli esercizi presenti nell'ordine in cui compaiono per la seduta indicata.
+Elenco degli esercizi attualmente presenti nel catalogo dell'app: [${catalogNames}].
+
+Per ogni esercizio estratto genera un oggetto JSON con i campi:
+1. "exerciseName": Se trovi una corrispondenza con uno degli esercizi del catalogo sopra, usa ESATTAMENTE quel nome dal catalogo. Altrimenti, usa il nome dell'esercizio così come scritto nella scheda.
+2. "category": Deve essere "main" (se fondamentale di powerlifting: squat, panca piana, stacco), "variant" (variante: board press, pin squat, fermo lungo, ecc.) o "accessory" (complementare: trazioni, rematore, braccia, spalle, addome).
+3. "target": Indicazione di carico/reps/serie (es. "88kg 3/4 x 6", "140kg 1x1 + 3x4 @125kg", "10 RM 3 e 3 x 4").
+4. "rest": Tempi di recupero se specificati (es. "3'", "2'", "3'-4'"), altrimenti "".
+5. "notes": Note o indicazioni tecniche presenti.
+
+Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi sopra specificati. Non aggiungere commenti, spiegazioni o testo al di fuori del JSON.
+Esempio di output:
+[
+  {
+    "exerciseName": "Squat",
+    "category": "main",
+    "target": "140kg 4x5",
+    "rest": "3'",
+    "notes": "Focus profondità"
+  }
+]`;
+          try {
+            await navigator.clipboard.writeText(promptText);
+            isPromptCopied.value = true;
+            showToast('Prompt copiato negli appunti!');
+            setTimeout(() => {
+              isPromptCopied.value = false;
+            }, 3000);
+          } catch (e) {
+            showToast('Errore copia negli appunti. Seleziona manualmente il testo.');
+          }
+        }
+
+        function handleJsonFileUpload(event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            jsonImportInput.value = e.target.result || '';
+          };
+          reader.readAsText(file);
+          event.target.value = '';
+        }
+
+        const parsedJsonResult = computed(() => {
+          const raw = (jsonImportInput.value || '').trim();
+          if (!raw) {
+            return { error: null, exercises: [] };
+          }
+          let clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+          let parsed = null;
+          try {
+            parsed = JSON.parse(clean);
+          } catch (err) {
+            return { error: 'Sintassi JSON non valida: ' + err.message, exercises: [] };
+          }
+
+          let list = [];
+          if (Array.isArray(parsed)) {
+            list = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.exercises)) list = parsed.exercises;
+            else if (Array.isArray(parsed.scheda)) list = parsed.scheda;
+            else if (Array.isArray(parsed.workout)) list = parsed.workout;
+            else if (Array.isArray(parsed.data)) list = parsed.data;
+            else {
+              return { error: 'Il JSON deve essere un array di oggetti o contenere una proprietà "exercises".', exercises: [] };
+            }
+          } else {
+            return { error: 'Formato JSON non valido (atteso array).', exercises: [] };
+          }
+
+          if (list.length === 0) {
+            return { error: 'Nessun esercizio trovato nel JSON.', exercises: [] };
+          }
+
+          const normalized = list.map((item, idx) => {
+            const name = (item.exerciseName || item.name || item.esercizio || '').trim();
+            let cat = (item.category || item.categoria || 'accessory').toLowerCase();
+            if (!['main', 'variant', 'accessory'].includes(cat)) {
+              cat = 'accessory';
+            }
+            const target = (item.target || item.carico || item.serie_reps || '').toString().trim();
+            const rest = (item.rest || item.recupero || '').toString().trim();
+            const notes = (item.notes || item.note || '').toString().trim();
+            return {
+              exerciseName: name || `Esercizio ${idx + 1}`,
+              category: cat,
+              target,
+              rest,
+              notes
+            };
+          });
+
+          return { error: null, exercises: normalized };
+        });
+
+        const jsonImportError = computed(() => parsedJsonResult.value.error);
+        const parsedJsonExercises = computed(() => parsedJsonResult.value.exercises);
+
+        async function applyJsonImport() {
+          const toImport = parsedJsonExercises.value;
+          if (!toImport || toImport.length === 0) return;
+
+          const now = new Date().toISOString();
+          for (const item of toImport) {
+            const exists = exercises.value.some(e => e.name.toLowerCase() === item.exerciseName.toLowerCase());
+            if (!exists && item.exerciseName) {
+              await db.exercises.put({
+                id: generateUUID(),
+                name: item.exerciseName,
+                category: item.category || 'accessory',
+                updatedAt: now,
+                isDeleted: false,
+                _dirty: true
+              });
+            }
+          }
+          await loadCatalog();
+
+          currentPlan.exercises = toImport.map(item => ({
+            exerciseName: item.exerciseName,
+            category: item.category || 'accessory',
+            target: item.target || '',
+            rest: item.rest || '',
+            notes: item.notes || ''
+          }));
+
+          await savePlan();
+          showToast(`Scheda Giorno ${selectedSession.value} importata con successo da JSON!`);
+          closeJsonImportModal();
+        }
+
         function filterExercises(category) {
           return exercises.value.filter(e => e.category === category);
         }
@@ -3433,8 +3700,8 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
             a: "È un segnaposto tecnico di sicurezza (soft-delete). Serve per avvisare gli altri tuoi dispositivi (che magari sono offline in quel momento) che quella determinata seduta è stata cancellata, impedendo che al loro ritorno online la re-invino allo Sheet come se fosse nuova."
           },
           {
-            q: "Come posso importare una nuova scheda usando l'Intelligenza Artificiale?",
-            a: "Come funziona:\nNella tab 'SCHEDA', seleziona Programma, Settimana e Seduta. Tocca 'Carica immagine' per scattare una foto/screenshot o 'Incolla appunti' (anche premendo Ctrl+V da PC). L'IA estrarrà automaticamente esercizi, carichi target, recuperi e note.\n\nRequisiti:\nRichiede una Gemini API Key gratuita creata su Google AI Studio (aistudio.google.com) e salvata nel box 'Configurazione e Chiavi'.\n\nIn caso di problemi:\n- Errore API / Modello non disponibile: verifica lo stato della chiave su Google AI Studio o aggiorna il nome del modello alla riga apiUrl in index.html (es. gemini-2.0-flash);\n- Estrazione imprecisa o fallita: assicurati che la foto sia nitida e ben illuminata, oppure copia e incolla direttamente il testo della scheda con 'Incolla appunti'."
+            q: "Come posso importare una nuova scheda usando l'Intelligenza Artificiale o da JSON?",
+            a: "Come funziona:\nNella tab 'SCHEDA', seleziona Programma, Settimana e Seduta.\n1. Da Smartphone: tocca 'Camera' per scattare una foto o 'Galleria' per caricare una foto/screenshot;\n2. Da PC: puoi usare 'Appunti' (anche premendo Ctrl+V) oppure toccare 'JSON'. Con l'opzione JSON puoi copiare con un clic un prompt precompilato (che include già la lista dei tuoi esercizi a catalogo), incollarlo su ChatGPT o Claude assieme alla foto della scheda, e incollare il JSON risultante nell'app. È rapido, affidabile e totalmente indipendente da quote o disponibilità API esterne.\n\nRequisiti per import diretto da foto (Gemini):\nRichiede una Gemini API Key gratuita creata su Google AI Studio (aistudio.google.com) e salvata nel box 'Configurazione e Chiavi'."
           },
           {
             q: "Cosa accade quando premo il pulsante RESET?",
@@ -3500,6 +3767,16 @@ Restituisci ESCLUSIVAMENTE un JSON valido che è un array di oggetti con i campi
           savePlan,
           handleImageUpload,
           handleClipboardPaste,
+          showJsonImportModal,
+          openJsonImportModal,
+          closeJsonImportModal,
+          jsonImportInput,
+          isPromptCopied,
+          copyJsonImportPrompt,
+          handleJsonFileUpload,
+          jsonImportError,
+          parsedJsonExercises,
+          applyJsonImport,
           selectedLogForModal,
           showLogDataModal,
           copyModalJson,
